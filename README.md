@@ -13,20 +13,11 @@
   <img src="https://img.shields.io/badge/Python-3.11-blue" />
   <img src="https://img.shields.io/badge/FastAPI-0.115-green" />
   <img src="https://img.shields.io/badge/Accuracy-98.5%25-brightgreen" />
-  <img src="https://img.shields.io/badge/Internship-Elevate_Labs-orange" />
+  
   
 </p>
 
----
 
-##  Internship Project Overview
-
-**Organization:** Elevate Labs  
-**Duration:** March 18, 2026 - May 18, 2026 (2 months)  
-**Project Type:** News Article Classification (Fake/Real) - Enhanced  
-**Student:** Bharat Chandra (bc833498@gmail.com)
-
-**📄 Project Report:** [INTERNSHIP_PROJECT_REPORT.md](INTERNSHIP_PROJECT_REPORT.md) - Complete 2-page internship report
 
 This project implements an AI-powered fake news detection system that combines machine learning, natural language processing, and real-time browser integration through a Chrome extension. The system achieves 98.5% accuracy using an ensemble approach with RoBERTa, DistilBERT, and TF-IDF models, integrated with multiple AI providers for semantic analysis.
 
