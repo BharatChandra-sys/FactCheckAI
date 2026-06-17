@@ -46,9 +46,7 @@ During this 2-month internship, the following was accomplished:
 - 1,000+ articles analyzed
 - Real-time fact-checking with <500ms response time
 
-** Detailed Report:** See [INTERNSHIP_PROJECT_REPORT.md](INTERNSHIP_PROJECT_REPORT.md) for complete project documentation
 
----
 
 ## 🎉 NEW: Phase 4 Production Features
 
