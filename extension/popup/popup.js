@@ -194,7 +194,7 @@ async function newChat() {
   currentSessionId = null;
   history = [];
   chrome.storage.local.remove("currentSessionId");
-  setChatTitle("PiNE AI");
+  setChatTitle("FactCheckAI");
   chatContainer.innerHTML = "";
   showWelcome();
   closeSidebar();
@@ -215,7 +215,7 @@ function showWelcome() {
   wrap.className = "welcome-screen";
   wrap.innerHTML = `
     <img src="../icons/logo.png" alt="" class="welcome-logo-img" style="width:56px;height:56px;object-fit:contain;margin-bottom:4px;">
-    <div class="welcome-brand"><span class="brand-main">PiNE</span><span class="brand-ai"> AI</span></div>
+    <div class="welcome-brand"><span class="brand-main">FactCheck</span><span class="brand-ai">AI</span></div>
     <div class="welcome-sub">Ask me anything or paste a news claim.<br>I'll chat or fact-check automatically.</div>
     <div class="welcome-chips">
       <button class="welcome-chip" id="wc1">📰 Paste a headline to fact-check</button>
@@ -1215,12 +1215,12 @@ async function send() {
   }
 }
 
-// Helper — set the header title, preserving PiNE AI brand styling
+// Helper — set the header title, preserving FactCheckAI brand styling
 function setChatTitle(title) {
   const el = document.getElementById("chat-title");
   if (!el) return;
-  if (!title || title === "PiNE AI") {
-    el.innerHTML = '<span class="brand-main">PiNE</span><span class="brand-ai"> AI</span>';
+  if (!title || title === "FactCheckAI") {
+    el.innerHTML = '<span class="brand-main">FactCheck</span><span class="brand-ai"> AI</span>';
   } else {
     // Session title — plain text, no brand styling
     el.textContent = title;

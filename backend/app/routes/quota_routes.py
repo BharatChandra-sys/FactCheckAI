@@ -97,9 +97,10 @@ async def get_tiers() -> Dict[str, Any]:
                 "price": 0,
                 "limits": TIER_LIMITS["free"],
                 "features": [
-                    "100 claims per month",
+                    "30 requests per day",
                     "Basic fact-checking",
                     "Evidence from trusted sources",
+                    "ML + AI analysis",
                     "Community support",
                 ]
             },

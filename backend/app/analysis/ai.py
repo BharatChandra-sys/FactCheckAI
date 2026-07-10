@@ -100,14 +100,21 @@ def _call_cerebras(text: str) -> dict:
     key = _get_keys()["cerebras"]
     if not key:
         raise ValueError("Cerebras API key missing")
-    return _call_openai_compat(CEREBRAS_URL, key, "llama3.1-8b", text)
+    # Try updated Cerebras model names
+    for model in ["llama-3.3-70b", "llama3.1-70b", "llama3.1-8b"]:
+        try:
+            return _call_openai_compat(CEREBRAS_URL, key, model, text)
+        except Exception:
+            continue
+    raise ValueError("All Cerebras models failed")
 
 
 def _call_groq(text: str) -> dict:
     key = _get_keys()["groq"]
     if not key:
         raise ValueError("Groq API key missing")
-    return _call_openai_compat(GROQ_URL, key, "llama3-8b-8192", text)
+    # Updated model name - old llama3-8b-8192 was decommissioned
+    return _call_openai_compat(GROQ_URL, key, "llama-3.3-70b-versatile", text)
 
 
 def _call_gemini(text: str) -> dict:
@@ -124,6 +131,9 @@ def _call_gemini(text: str) -> dict:
         },
         timeout=12
     )
+    # Handle quota errors gracefully
+    if r.status_code == 429:
+        raise ValueError("Gemini quota exhausted")
     r.raise_for_status()
     raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
     return _parse_structured(raw)

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "PiNE AI",
-  "version": "2.6.2",
-  "description": "PiNE AI — Real-time fake news detection powered by AI",
+  "name": "FactCheckAI",
+  "version": "2.6.1",
+  "description": "FactCheckAI — Real-time fake news detection powered by AI",
 
   "permissions": [
     "storage",
@@ -23,7 +23,7 @@
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
       },
-      "description": "Open PiNE AI popup"
+      "description": "Open FactCheckAI popup"
     },
     "analyze-selected-text": {
       "suggested_key": {
@@ -69,7 +69,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "PiNE AI — Fact Checker"
+    "default_title": "FactCheckAI — Fact Checker"
   },
 
   "side_panel": {

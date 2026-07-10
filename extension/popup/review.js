@@ -1,4 +1,4 @@
-// Review Queue — PiNE AI
+// Review Queue — FactCheckAI
 // Self-contained: does not rely on any globals from config.js
 
 const _REVIEW_API = (function () {
@@ -24,7 +24,7 @@ async function _reviewJson(res) {
 
 function _reviewHeaders(extra = {}) {
   return {
-    "X-Client": "pine-extension",
+    "X-Client": "factcheck-extension",
     ...extra,
   };
 }

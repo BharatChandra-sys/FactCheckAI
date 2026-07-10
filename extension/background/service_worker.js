@@ -1,5 +1,5 @@
 /**
- * PiNE AI — Background Service Worker (Manifest V3)
+ * FactCheckAI — Background Service Worker (Manifest V3)
  *
  * Responsibilities:
  *  - Keep backend alive (alarm-based ping every 4 min)
@@ -29,7 +29,7 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
   // Context menu
   chrome.contextMenus.create({
     id:       "analyze-fake-news",
-    title:    "🔍 TruthScan with PiNE AI",
+    title:    "🔍 TruthScan with FactCheckAI",
     contexts: ["selection"],
   });
 
@@ -42,10 +42,10 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 
   if (reason === "install") {
     // Show a one-time welcome notification
-    chrome.notifications.create("pine-welcome", {
+    chrome.notifications.create("factcheck-welcome", {
       type:    "basic",
       iconUrl: chrome.runtime.getURL("icons/icon128.png"),
-      title:   "PiNE AI installed",
+      title:   "FactCheckAI installed",
       message: "Press Ctrl+Shift+Y to open, or right-click any text to fact-check.",
     });
   }
@@ -59,7 +59,7 @@ chrome.alarms.onAlarm.addListener(({ name }) => {
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 /**
- * Open the PiNE AI popup window anchored to the top-right of the current window.
+ * Open the FactCheckAI popup window anchored to the top-right of the current window.
  */
 function openAnalysisPopup() {
   chrome.windows.getCurrent((win) => {
@@ -136,7 +136,7 @@ function notify(message) {
   chrome.notifications.create({
     type:    "basic",
     iconUrl: chrome.runtime.getURL("icons/icon48.png"),
-    title:   "PiNE AI",
+    title:   "FactCheckAI",
     message,
   });
 }

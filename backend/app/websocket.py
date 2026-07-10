@@ -59,7 +59,7 @@ class ConnectionManager:
         await self.send_personal_message(
             {
                 "type": "connected",
-                "message": "Connected to PiNE AI",
+                "message": "Connected to FactCheckAI",
                 "timestamp": datetime.utcnow().isoformat()
             },
             websocket

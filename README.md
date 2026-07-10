@@ -13,11 +13,72 @@
   <img src="https://img.shields.io/badge/Python-3.11-blue" />
   <img src="https://img.shields.io/badge/FastAPI-0.115-green" />
   <img src="https://img.shields.io/badge/Accuracy-98.5%25-brightgreen" />
-  
-  
+  <img src="https://img.shields.io/badge/Internship-Elevate_Labs-orange" />
+  <img src="https://img.shields.io/badge/License-MIT-lightgrey" />
 </p>
 
+---
 
+## 🚀 Get Started
+
+**Choose your path:**
+
+| Goal | Guide | Time | Cost |
+|------|-------|------|------|
+| 🧪 **Try it out** | [GET_STARTED.md](GET_STARTED.md) → Option 1 | 10 min | $0 |
+| 🆓 **Deploy for FREE** | [QUICKSTART_FREE.md](QUICKSTART_FREE.md) | 1.5 hrs | $0/month |
+| ⚡ **Deploy fast (paid)** | [GET_STARTED.md](GET_STARTED.md) → Option 3 | 5 min | $2/month |
+| 📚 **Compare options** | [DEPLOYMENT_SUMMARY.md](DEPLOYMENT_SUMMARY.md) | - | - |
+
+---
+
+## 🆓 100% FREE Deployment Available!
+
+Deploy FactCheckAI with **$0/month cost** using free tiers:
+
+```
+Oracle Cloud (12GB) + Oracle Cloud (12GB) + HuggingFace (16GB) + Render (256MB)
+= 40GB RAM Total | $0/month Forever!
+```
+
+### Quick Deploy Options
+
+| Option | Time | RAM | Cost | Best For |
+|--------|------|-----|------|----------|
+| **Multi-Server (Recommended)** | 1.5 hrs | 40GB | **$0/month** | Production, All Models |
+| Railway | 5 min | 2GB | $2/month | Quick test |
+| Single Server | 30 min | 12GB | $0/month | Small scale |
+| Local Dev | 10 min | 8GB | $0 | Testing |
+
+### 📖 Documentation
+
+- 🚀 **[GET_STARTED.md](GET_STARTED.md)** - One-page quick start guide
+- 🆓 **[QUICKSTART_FREE.md](QUICKSTART_FREE.md)** - 100% free deployment walkthrough
+- 📋 **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** - Step-by-step checklist
+- 📚 **[DEPLOYMENT_100_PERCENT_FREE.md](DEPLOYMENT_100_PERCENT_FREE.md)** - Complete multi-server guide
+- 🎯 **[DEPLOYMENT_SUMMARY.md](DEPLOYMENT_SUMMARY.md)** - Compare all deployment options
+- 🏗️ **[ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)** - Visual architecture diagrams
+- 🎓 **[DEPLOYMENT_GITHUB_STUDENT.md](DEPLOYMENT_GITHUB_STUDENT.md)** - GitHub Student Pack guide
+
+### Why Multi-Server?
+
+- ✅ Run **all transformer models** (DeBERTa 738MB, Ensemble 1GB)
+- ✅ **40GB RAM** across 4 free servers
+- ✅ **$0/month** forever (no time limit!)
+- ✅ Scales to thousands of users
+- ✅ Production-grade reliability
+- ✅ 98.5% accuracy with full pipeline
+
+---
+
+##  Internship Project Overview
+
+**Organization:** Elevate Labs  
+**Duration:** March 18, 2026 - May 18, 2026 (2 months)  
+**Project Type:** News Article Classification (Fake/Real) - Enhanced  
+**Student:** Bharat Chandra (bc833498@gmail.com)
+
+**📄 Project Report:** [INTERNSHIP_PROJECT_REPORT.md](INTERNSHIP_PROJECT_REPORT.md) - Complete 2-page internship report
 
 This project implements an AI-powered fake news detection system that combines machine learning, natural language processing, and real-time browser integration through a Chrome extension. The system achieves 98.5% accuracy using an ensemble approach with RoBERTa, DistilBERT, and TF-IDF models, integrated with multiple AI providers for semantic analysis.
 
@@ -46,19 +107,23 @@ During this 2-month internship, the following was accomplished:
 - 1,000+ articles analyzed
 - Real-time fact-checking with <500ms response time
 
+** Detailed Report:** See [INTERNSHIP_PROJECT_REPORT.md](INTERNSHIP_PROJECT_REPORT.md) for complete project documentation
 
+---
 
 ## 🎉 NEW: Phase 4 Production Features
 
 **FactChecker AI is now production-ready!** Recent additions include:
 
+- ✅ **Credit System** - 30 free requests per day (like Sider AI) - resets daily
 - ✅ **SHAP Explainability** - Visual AI explanations showing which words triggered the verdict
 - ✅ **Review Queue** - Human-in-the-loop interface for uncertain claims (active learning)
 - ✅ **A/B Testing** - Framework for testing model versions and configurations
 - ✅ **Monitoring** - 20+ Prometheus metrics + Grafana dashboard
-- ✅ **Deployment** - Complete guides for Render, HuggingFace, and Docker
+- ✅ **Deployment** - Complete guides for Render, DigitalOcean (GitHub Student Pack), and Docker
 
-[See Phase 4 Complete Summary →](PHASE4_COMPLETE.md)
+[See Phase 4 Complete Summary →](PHASE4_COMPLETE.md)  
+[Deploy with GitHub Student Pack →](DEPLOYMENT_GITHUB_STUDENT.md)
 
 ---
 

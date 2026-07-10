@@ -113,19 +113,30 @@ def is_claim(text: str) -> bool:
     keys = _get_keys()
 
     fns = []
-    if keys["cerebras"]:
-        fns.append(("Cerebras", lambda: _call_openai_compat(CEREBRAS_URL, keys["cerebras"], "llama3.1-8b", messages, max_tokens=5, temperature=0)))
+    # Try Groq with updated model names
     if keys["groq"]:
-        fns.append(("Groq", lambda: _call_openai_compat(GROQ_URL, keys["groq"], "llama3-8b-8192", messages, max_tokens=5, temperature=0)))
+        # Updated Groq models (llama3-8b-8192 was decommissioned)
+        for model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]:
+            try:
+                fns.append((f"Groq-{model}", lambda m=model: _call_openai_compat(GROQ_URL, keys["groq"], m, messages, max_tokens=5, temperature=0)))
+                break
+            except:
+                continue
+    # Gemini as backup (may have quota limits)
     if keys["gemini"]:
         fns.append(("Gemini", lambda: _call_gemini(messages, max_tokens=5, temperature=0)))
+    if keys["cerebras"]:
+        fns.append(("Cerebras", lambda: _call_openai_compat(CEREBRAS_URL, keys["cerebras"], "llama3.1-8b", messages, max_tokens=5, temperature=0)))
     if keys["minimax"]:
         fns.append(("MiniMax", lambda: _call_minimax_chat(messages, max_tokens=5, temperature=0)))
 
     try:
         result = _first_success(fns)
         return result.strip().lower().startswith("claim")
-    except Exception:
+    except Exception as e:
+        # Log the error for debugging
+        import logging
+        logging.warning(f"All AI providers failed for claim detection: {e}")
         # Default: treat as chat (not claim) if all AI providers fail
         return False
 
@@ -138,17 +149,26 @@ def run_chat(message: str, history: list) -> str:
 
     keys = _get_keys()
     fns = []
-    # MiniMax M2.7-highspeed first for chat — fastest with high quality
+    # Try Groq with updated model names (old models decommissioned)
+    if keys["groq"]:
+        for model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]:
+            try:
+                fns.append((f"Groq-{model}", lambda m=model: _call_openai_compat(GROQ_URL, keys["groq"], m, msgs)))
+                break
+            except:
+                continue
+    # Gemini as backup (may have quota limits)
+    if keys["gemini"]:
+        fns.append(("Gemini", lambda: _call_gemini(msgs)))
+    # MiniMax M2.7-highspeed for chat — fastest with high quality
     if keys["minimax"]:
         fns.append(("MiniMax", lambda: _call_minimax_chat(msgs)))
     if keys["cerebras"]:
         fns.append(("Cerebras", lambda: _call_openai_compat(CEREBRAS_URL, keys["cerebras"], "llama3.1-8b", msgs)))
-    if keys["groq"]:
-        fns.append(("Groq", lambda: _call_openai_compat(GROQ_URL, keys["groq"], "llama3-8b-8192", msgs)))
-    if keys["gemini"]:
-        fns.append(("Gemini", lambda: _call_gemini(msgs)))
 
     try:
         return _first_success(fns)
-    except Exception:
+    except Exception as e:
+        import logging
+        logging.warning(f"All AI providers failed for chat: {e}")
         return "I'm having trouble connecting right now. Please try again in a moment."

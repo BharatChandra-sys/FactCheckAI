@@ -26,10 +26,10 @@ RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
 # Tier limits (requests per window)
 TIER_LIMITS = {
     "free": {
-        "per_minute": 10,
-        "per_hour": 100,
-        "per_day": 500,
-        "monthly_claims": 100,
+        "per_minute": 5,
+        "per_hour": 30,
+        "per_day": 30,       # Daily credit limit (like Sider AI)
+        "monthly_claims": 30,  # Also enforce monthly limit
     },
     "pro": {
         "per_minute": 60,
@@ -44,9 +44,9 @@ TIER_LIMITS = {
         "monthly_claims": -1,  # Unlimited
     },
     "anonymous": {
-        "per_minute": 5,
-        "per_hour": 20,
-        "per_day": 50,
+        "per_minute": 3,
+        "per_hour": 10,
+        "per_day": 10,       # 10 requests for non-logged users
         "monthly_claims": 10,
     }
 }
