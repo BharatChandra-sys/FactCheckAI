@@ -68,25 +68,25 @@ Community: 50K+ users • 2M+ fact-checks • 96.7% accuracy
 
 ## Key Features
 
-### 🚀 **Distributed AI Architecture**
+###  **Distributed AI Architecture**
 - **4 specialized ML servers** optimized for different complexity levels
 - **Smart request routing** based on content analysis and server availability  
 - **15+ AI models** including fine-tuned DeBERTa, ensemble voting, and multimodal analysis
 - **Auto-failover** with graceful degradation ensuring 99.9% uptime
 
-### 🎯 **Advanced Detection Capabilities**
+###  **Advanced Detection Capabilities**
 - **Fake news classification** with 96.7% accuracy using transformer ensembles
 - **Bias detection** across political, cultural, and ideological dimensions
 - **Source credibility** analysis with real-time publisher reputation scoring
 - **Manipulation technique** identification (emotional appeals, cherry-picking, etc.)
 
-### 🌐 **Production-Grade Infrastructure**  
+###  **Production-Grade Infrastructure**  
 - **Multi-cloud deployment** across Render, Heroku, Azure, and HuggingFace
 - **Horizontal scaling** with intelligent load balancing and caching
 - **Enterprise monitoring** with Datadog, New Relic, and custom metrics
 - **Zero-downtime deployments** with automated rollback capabilities
 
-### 🔒 **Privacy & Security**
+###  **Privacy & Security**
 - **On-device preprocessing** - sensitive content never leaves your browser
 - **Encrypted API communication** with JWT-based authentication
 - **GDPR compliant** data handling with automatic anonymization
