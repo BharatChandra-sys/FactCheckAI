@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Multi-language Support — PiNE AI
 
@@ -162,7 +163,7 @@ def translate_to_english(text: str, source_lang: str = "auto") -> Tuple[str, str
         if keys.get("groq"):
             fns.append(("Groq", lambda: _call_openai_compat(
                 "https://api.groq.com/openai/v1/chat/completions",
-                keys["groq"], "llama3-8b-8192", messages, max_tokens=500, temperature=0
+                keys["groq"], "llama-3.3-70b-versatile", messages, max_tokens=500, temperature=0
             )))
         if keys.get("cerebras"):
             fns.append(("Cerebras", lambda: _call_openai_compat(

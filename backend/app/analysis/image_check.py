@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Image + Text Consistency Checker
 

@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Level 70 — Cross-Encoder Evidence Reranking
 
@@ -47,7 +48,7 @@ def _score_article(claim: str, article: dict) -> Optional[dict]:
         if keys.get("groq"):
             fns.append(("Groq", lambda: _call_openai_compat(
                 "https://api.groq.com/openai/v1/chat/completions",
-                keys["groq"], "llama3-8b-8192", messages, max_tokens=80, temperature=0
+                keys["groq"], "llama-3.3-70b-versatile", messages, max_tokens=80, temperature=0
             )))
 
         if not fns:

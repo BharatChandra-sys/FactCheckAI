@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """Quick API test suite — runs all endpoints and reports pass/fail."""
 import requests, json, time
 

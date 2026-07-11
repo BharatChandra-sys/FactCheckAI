@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Application configuration — loaded once at startup.
 All values come from environment variables (set in Render dashboard or .env).

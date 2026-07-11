@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Cooldown Score - Viral Misinformation Risk Assessment
 

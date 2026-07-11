@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 ML Analysis — Multi-server architecture:
 
@@ -12,7 +13,6 @@ Fallback: Local TF-IDF + Logistic Regression from model.joblib
 import os
 import logging
 import httpx
-import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -60,25 +60,24 @@ def _tfidf_score(text: str) -> float | None:
         return None
 
 
-# ── External ML Server Calls ──────────────────────────────────
+# ── External ML Server Calls (synchronous httpx — safe inside uvicorn worker threads) ──
 
-async def _call_ml_server_1(text: str) -> float | None:
-    """Call DeBERTa server on Oracle Cloud (ML Server 1)"""
+def _call_ml_server_1_sync(text: str) -> float | None:
+    """Call DeBERTa server on Oracle Cloud (ML Server 1) — synchronous."""
     if not ML_SERVER_1_URL or not ML_API_KEY:
         logger.debug("ML Server 1 not configured")
         return None
-    
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(
+        with httpx.Client(timeout=10.0) as client:
+            response = client.post(
                 f"{ML_SERVER_1_URL}/predict",
                 json={"text": text, "api_key": ML_API_KEY}
             )
             if response.status_code == 200:
                 data = response.json()
                 score = data.get("fake_probability")
-                logger.info("ML Server 1 (DeBERTa): %.3f in %dms", 
-                           score, data.get("inference_time_ms", 0))
+                logger.info("ML Server 1 (DeBERTa): %.3f in %dms",
+                            score, data.get("inference_time_ms", 0))
                 return score
             else:
                 logger.warning("ML Server 1 returned status %d", response.status_code)
@@ -89,16 +88,15 @@ async def _call_ml_server_1(text: str) -> float | None:
     return None
 
 
-async def _call_ml_server_2(text: str) -> float | None:
-    """Call Ensemble server on HuggingFace (ML Server 2)"""
+def _call_ml_server_2_sync(text: str) -> float | None:
+    """Call Ensemble server on HuggingFace (ML Server 2) — synchronous."""
     if not ML_SERVER_2_URL or not ML_API_KEY:
         logger.debug("ML Server 2 not configured")
         return None
-    
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        with httpx.Client(timeout=15.0) as client:
             # HuggingFace Gradio API format
-            response = await client.post(
+            response = client.post(
                 f"{ML_SERVER_2_URL}/api/predict",
                 json={"data": [text, ML_API_KEY]}
             )
@@ -146,21 +144,15 @@ def run_ml_analysis(text: str) -> dict:
     
     # Try ML Server 1 (Oracle Cloud - DeBERTa)
     if ML_SERVER_1_URL:
-        try:
-            score = asyncio.run(_call_ml_server_1(text))
-            if score is not None:
-                source = "deberta-ml1"
-        except Exception as e:
-            logger.debug(f"ML Server 1 error: {e}")
+        score = _call_ml_server_1_sync(text)
+        if score is not None:
+            source = "deberta-ml1"
     
     # Try ML Server 2 (HuggingFace - Ensemble) if ML1 failed
     if score is None and ML_SERVER_2_URL:
-        try:
-            score = asyncio.run(_call_ml_server_2(text))
-            if score is not None:
-                source = "ensemble-ml2"
-        except Exception as e:
-            logger.debug(f"ML Server 2 error: {e}")
+        score = _call_ml_server_2_sync(text)
+        if score is not None:
+            source = "ensemble-ml2"
     
     # Try local TF-IDF if both ML servers failed
     if score is None:

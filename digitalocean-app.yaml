@@ -1,0 +1,198 @@
+# DigitalOcean App Platform Configuration
+# Deploy Command: doctl apps create --spec digitalocean-app.yaml
+# Or use the DigitalOcean Dashboard: Apps → Create App → Upload this spec
+
+name: factcheckai-backend
+services:
+  - name: api
+    source_dir: /backend
+    github:
+      repo: your-github-username/fake-news-extension
+      branch: main
+      deploy_on_push: true
+    
+    # Build Configuration
+    build_command: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    
+    # Runtime Configuration  
+    run_command: |
+      python -m alembic upgrade head
+      uvicorn app.main:app --host 0.0.0.0 --port 8080
+    
+    # Resource Limits (Basic Plan: $5/month)
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    # basic-xxs: 0.5 CPU, 512MB RAM (perfect for our needs)
+    
+    # Health Check
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 10
+      period_seconds: 30
+      timeout_seconds: 5
+      failure_threshold: 3
+      success_threshold: 1
+    
+    # Auto-scaling (optional)
+    autoscaling:
+      min_instance_count: 1
+      max_instance_count: 2
+      metrics:
+        cpu:
+          percent: 80
+    
+    # Environment Variables (SET THESE IN DIGITALOCEAN DASHBOARD)
+    envs:
+      # Database
+      - key: DATABASE_URL
+        value: "postgresql://username:password@your-aiven-host:port/database"
+        scope: RUN_TIME
+      
+      # API Keys (SET IN DASHBOARD - DO NOT PUT REAL KEYS HERE)
+      - key: CEREBRAS_API_KEY
+        value: "your_cerebras_key_here"
+        scope: RUN_TIME
+        type: SECRET
+      
+      - key: GROQ_API_KEY  
+        value: "your_groq_key_here"
+        scope: RUN_TIME
+        type: SECRET
+      
+      - key: GEMINI_API_KEY
+        value: "your_gemini_key_here" 
+        scope: RUN_TIME
+        type: SECRET
+      
+      - key: NEWS_API_KEY
+        value: "your_news_api_key_here"
+        scope: RUN_TIME
+        type: SECRET
+      
+      - key: TAVILY_API_KEY
+        value: "your_tavily_key_here"
+        scope: RUN_TIME
+        type: SECRET
+      
+      - key: SERPAPI_KEY
+        value: "your_serpapi_key_here"
+        scope: RUN_TIME
+        type: SECRET
+      
+      - key: GOOGLE_FACTCHECK_API_KEY
+        value: "your_google_factcheck_key_here"
+        scope: RUN_TIME
+        type: SECRET
+      
+      - key: BREVO_API_KEY
+        value: "your_brevo_key_here"
+        scope: RUN_TIME
+        type: SECRET
+      
+      # Security
+      - key: JWT_SECRET
+        value: "generate_with_openssl_rand_hex_32"
+        scope: RUN_TIME
+        type: SECRET
+      
+      # Google OAuth
+      - key: GOOGLE_CLIENT_ID
+        value: "595122585703-1geqe1e5uqd0lt4emf95kel6hsa3r64c.apps.googleusercontent.com"
+        scope: RUN_TIME
+      
+      # Production Settings
+      - key: ENVIRONMENT
+        value: "production"
+        scope: RUN_TIME
+      
+      - key: DEBUG
+        value: "false"
+        scope: RUN_TIME
+      
+      # CORS
+      - key: ALLOWED_ORIGINS
+        value: "chrome-extension://*,https://*.onrender.com"
+        scope: RUN_TIME
+
+# Domain Configuration (optional)
+domains:
+  - domain: factcheckai-api.your-domain.com
+    type: PRIMARY
+    wildcard: false
+    zone: your-domain.com
+
+# Database (Alternative: Use DigitalOcean Managed Database)
+# databases:
+#   - engine: PG
+#     name: factcheckai-db
+#     num_nodes: 1
+#     size: db-s-1vcpu-1gb
+#     version: "14"
+
+# Static Assets (if needed for extension hosting)
+static_sites:
+  - name: extension-assets
+    source_dir: /extension
+    build_command: echo "Static files ready"
+    output_dir: /extension
+    index_document: popup/popup.html
+    error_document: popup/popup.html
+    routes:
+      - path: /extension
+        preserve_path_prefix: true
+
+# Networking
+networking:
+  cors:
+    allow_origins:
+      - https://chrome-extension://*
+      - https://*.onrender.com
+      - https://accounts.google.com
+    allow_methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - OPTIONS
+    allow_headers:
+      - Authorization
+      - Content-Type
+      - X-Requested-With
+
+# Alerts (optional)
+alerts:
+  - rule: CPU_UTILIZATION
+    disabled: false
+    spec:
+      operator: GREATER_THAN
+      value: 80
+      window: FIVE_MINUTES
+  
+  - rule: MEM_UTILIZATION  
+    disabled: false
+    spec:
+      operator: GREATER_THAN
+      value: 80
+      window: FIVE_MINUTES
+
+# Jobs (for background tasks like DB cleanup)
+jobs:
+  - name: db-cleanup
+    source_dir: /backend
+    github:
+      repo: your-github-username/fake-news-extension
+      branch: main
+    
+    build_command: pip install -r requirements.txt
+    run_command: python -m app.jobs.cleanup_old_records
+    
+    # Run daily at 2 AM UTC
+    kind: CRON
+    cron: "0 2 * * *"
+    
+    envs:
+      - key: DATABASE_URL
+        value: "postgresql://username:password@your-aiven-host:port/database"
+        scope: RUN_TIME

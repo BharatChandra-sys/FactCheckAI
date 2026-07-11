@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 import os
 import logging
 import json
@@ -107,6 +108,24 @@ logging.getLogger("uvicorn.access").addFilter(_SuppressHealthLogs())
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
 
+    # ── Run Alembic migrations (safe to run on every startup; no-op if up to date) ──
+    try:
+        import subprocess, sys
+        alembic_ini = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "alembic.ini")
+        if os.path.exists(alembic_ini):
+            result = subprocess.run(
+                [sys.executable, "-m", "alembic", "-c", alembic_ini, "upgrade", "head"],
+                capture_output=True, text=True, timeout=60
+            )
+            if result.returncode == 0:
+                logger.info("Alembic migrations applied: %s", result.stdout.strip() or "up to date")
+            else:
+                logger.warning("Alembic migration warning: %s", result.stderr.strip())
+        else:
+            logger.debug("alembic.ini not found — skipping migrations (SQLite dev mode)")
+    except Exception as e:
+        logger.warning("Alembic migration failed: %s — continuing with create_all", e)
+
     # ── Load TF-IDF model only (fast, ~50ms) ──────────────────
     # RoBERTa is NOT preloaded — it's 500MB and would time out Render's
     # health check. It loads lazily on first request instead.
@@ -122,10 +141,19 @@ async def lifespan(app: FastAPI):
         model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "model.joblib")
         if not os.path.exists(model_path):
             try:
-                import subprocess, sys
                 train_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "training", "train.py")
-                subprocess.run([sys.executable, train_script], check=True)
-                logger.info("ML model trained on startup")
+                proc = await asyncio.create_subprocess_exec(
+                    sys.executable, train_script,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                _, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
+                if proc.returncode == 0:
+                    logger.info("ML model trained on startup")
+                else:
+                    logger.warning("ML training failed: %s", stderr.decode()[:200] if stderr else "unknown")
+            except asyncio.TimeoutError:
+                logger.warning("ML training timed out — will use default 0.5 until model is built")
             except Exception as e:
                 logger.warning("ML training failed on startup: %s", e)
 
@@ -146,27 +174,62 @@ async def lifespan(app: FastAPI):
         from database import SessionLocal
 
         def _collection_scheduler():
-            """Check every hour if it's time to collect new training data."""
-            _time.sleep(300)  # wait 5 min after startup before first check
+            """
+            Two jobs in one thread:
+            1. Every 14 minutes: self-ping /health AND ping ML Server 2 (HF Spaces)
+               to prevent both Render and HF Spaces from sleeping.
+               NOTE: Render blocks self-pings from inside the same service.
+               This ping works for HF Spaces and any external service.
+               For Render itself, configure UptimeRobot (free) to ping /health every 5 min.
+            2. Every hour: check if training data collection should be triggered.
+            """
+            _time.sleep(60)  # brief pause after startup
+            last_collection_check = 0.0
+
             while True:
+                now = _time.time()
+
+                # ── Keep-alive pings (every 14 min) ───────────────
                 try:
-                    from app.analysis.continuous_learning import maybe_collect_data
-                    result = maybe_collect_data(SessionLocal)
-                    if result.get("triggered"):
-                        logger.info("Background data collection triggered: %s", result.get("reason"))
+                    import requests as _req
+                    # Ping HF Spaces ML server to prevent it sleeping
+                    ml2 = os.getenv("ML_SERVER_2_URL")
+                    if ml2:
+                        _req.get(ml2, timeout=10)
+                        logger.debug("Keep-alive ping sent to ML Server 2 (HF Spaces)")
+                    # Ping DO ML server healthcheck
+                    ml1 = os.getenv("ML_SERVER_1_URL")
+                    if ml1:
+                        _req.get(f"{ml1}/health", timeout=5)
+                        logger.debug("Keep-alive ping sent to ML Server 1 (DO)")
                 except Exception as e:
-                    logger.debug("Collection scheduler error: %s", e)
-                _time.sleep(3600)  # check every hour
+                    logger.debug("Keep-alive ping failed: %s", e)
+
+                # ── Data collection (every hour) ──────────────────
+                if now - last_collection_check >= 3600:
+                    db = SessionLocal()
+                    try:
+                        from app.analysis.continuous_learning import maybe_collect_data
+                        result = maybe_collect_data(db)
+                        if result.get("triggered"):
+                            logger.info("Background data collection triggered: %s", result.get("reason"))
+                    except Exception as e:
+                        logger.debug("Collection scheduler error: %s", e)
+                    finally:
+                        db.close()
+                    last_collection_check = now
+
+                _time.sleep(840)  # 14 minutes — just under Render's 15-min sleep threshold
 
         _sched_thread = threading.Thread(
             target=_collection_scheduler,
             daemon=True,
-            name="data-collection-scheduler",
+            name="background-scheduler",
         )
         _sched_thread.start()
-        logger.info("Background data collection scheduler started (every 24h)")
+        logger.info("Background scheduler started (keep-alive every 14min, data collection every 1h)")
     except Exception as e:
-        logger.warning("Data collection scheduler failed to start: %s", e)
+        logger.warning("Background scheduler failed to start: %s", e)
 
     yield
 
@@ -176,23 +239,26 @@ app = FastAPI(
     version="2.6.1",
     lifespan=lifespan,
     description="FactCheckAI — AI-powered fact-checking API with ML models, evidence search, and real-time verification",
-    # Disable docs in production for security (set ENABLE_DOCS=true to re-enable)
-    docs_url="/docs" if os.getenv("ENABLE_DOCS", "true").lower() == "true" else None,
-    redoc_url="/redoc" if os.getenv("ENABLE_DOCS", "true").lower() == "true" else None,
-    openapi_url="/openapi.json" if os.getenv("ENABLE_DOCS", "true").lower() == "true" else None,
+    # Disable docs in production — set ENABLE_DOCS=true to re-enable for debugging
+    docs_url="/docs" if os.getenv("ENABLE_DOCS", "false").lower() == "true" else None,
+    redoc_url="/redoc" if os.getenv("ENABLE_DOCS", "false").lower() == "true" else None,
+    openapi_url="/openapi.json" if os.getenv("ENABLE_DOCS", "false").lower() == "true" else None,
 )
 
-# ── CORS — only allow extension and known origins ─────────────
-ALLOWED_ORIGINS = [
-    "chrome-extension://",   # matched by prefix check below
+# ── CORS — restrict to known origins; Chrome extension pages send Origin: null ─
+_RAW_ALLOWED = os.getenv("ALLOWED_ORIGINS", "")
+_ENV_ORIGINS = [o.strip() for o in _RAW_ALLOWED.split(",") if o.strip()]
+
+ALLOWED_ORIGINS = _ENV_ORIGINS or [
     "https://fake-news-analyzer-j6ka.onrender.com",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # Chrome extensions need wildcard — headers guard the rest
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"chrome-extension://.*",  # all extension origins
     allow_methods=["GET", "POST", "DELETE", "PATCH", "HEAD"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "X-Client", "X-Client-Version", "X-Request-ID"],
     max_age=600,
 )
 

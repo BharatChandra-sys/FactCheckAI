@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Transformer-based fake news classifier using DeBERTa
 

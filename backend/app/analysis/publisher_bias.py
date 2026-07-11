@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Publisher Bias Database
 

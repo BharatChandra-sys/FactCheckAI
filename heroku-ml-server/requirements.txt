@@ -1,0 +1,25 @@
+# Heroku ML Server Requirements
+# Optimized for ML inference on Heroku Eco dyno
+
+# Core web framework
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+gunicorn==23.0.0
+python-dotenv==1.1.0
+
+# Data validation
+pydantic==2.10.6
+
+# System monitoring
+psutil==7.0.0
+
+# ML Dependencies - CPU optimized for Heroku
+torch==2.6.0+cpu --find-links https://download.pytorch.org/whl/torch_stable.html
+transformers==4.51.3
+
+# HTTP client for health checks
+httpx==0.28.1
+
+# Optional: Database for ML result caching
+psycopg2-binary==2.9.10
+sqlalchemy==2.0.40

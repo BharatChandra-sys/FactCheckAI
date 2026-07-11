@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 from database import engine
 import sqlalchemy as sa
 

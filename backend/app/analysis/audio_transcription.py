@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Audio transcription for voice-based fact-checking
 

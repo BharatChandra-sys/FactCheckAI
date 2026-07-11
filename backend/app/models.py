@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from database import Base

@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Advanced Analytics & Insights Routes
 
@@ -154,7 +155,8 @@ async def get_geographic_trends(
 @router.get("/users/engagement")
 async def get_user_engagement(
     days: int = Query(default=30, ge=1, le=365),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user)   # require auth — prevents email leak
 ) -> Dict[str, Any]:
     """
     Get user engagement metrics.
@@ -212,7 +214,6 @@ async def get_user_engagement(
         "top_contributors": [
             {
                 "name": user.name or "Anonymous",
-                "email": user.email[:20] + "..." if len(user.email) > 20 else user.email,
                 "claims": user.claim_count
             }
             for user in top_users

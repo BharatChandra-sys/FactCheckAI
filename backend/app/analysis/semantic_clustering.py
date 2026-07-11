@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Semantic Clustering - Detect Paraphrased Misinformation Variants
 

@@ -123,7 +123,15 @@ async function doGoogle() {
 }
 
 async function googleWebAuthFlow() {
-  const CLIENT_ID = "595122585703-1geqe1e5uqd0lt4emf95kel6hsa3r64c.apps.googleusercontent.com";
+  // Get Google Client ID from manifest.json instead of hardcoding
+  const manifestData = chrome.runtime.getManifest();
+  const CLIENT_ID = manifestData.oauth2?.client_id;
+  
+  if (!CLIENT_ID) {
+    showError("Google Client ID not configured in extension");
+    return;
+  }
+  
   const REDIRECT  = chrome.identity.getRedirectURL("oauth2");
   const authURL   = "https://accounts.google.com/o/oauth2/auth" +
     `?client_id=${encodeURIComponent(CLIENT_ID)}` +

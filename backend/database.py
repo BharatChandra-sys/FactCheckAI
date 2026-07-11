@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -28,11 +29,13 @@ if is_sqlite:
     )
 else:
     # PostgreSQL production settings
+    # Aiven free tier has ~25 max connections (1GB RAM plan)
+    # pool_size + max_overflow must stay well under that limit
     engine = create_engine(
         DATABASE_URL,
         pool_pre_ping=True,       # reconnect if connection dropped
-        pool_size=5,              # max persistent connections
-        max_overflow=10,          # extra connections under load
+        pool_size=3,              # max persistent connections
+        max_overflow=5,           # extra connections under load (total: 8 max)
         pool_timeout=30,          # wait up to 30s for a connection
         pool_recycle=1800,        # recycle connections every 30 min
     )

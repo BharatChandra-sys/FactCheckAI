@@ -1,0 +1,191 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+    
+    - name: Run tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+        JWT_SECRET: test-secret-key-for-ci
+      run: |
+        cd backend
+        python -m pytest tests/ -v --cov=app --cov-report=xml
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.xml
+        flags: backend
+
+  test-extension:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        cd extension
+        npm ci
+        
+    - name: Run extension tests
+      run: |
+        cd extension
+        npm test
+        
+    - name: Lint extension code
+      run: |
+        cd extension
+        npm run lint
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install security tools
+      run: |
+        pip install bandit safety
+        
+    - name: Run Bandit security scan
+      run: |
+        cd backend
+        bandit -r app/ -f json -o bandit-report.json || true
+        
+    - name: Check dependencies for vulnerabilities
+      run: |
+        cd backend
+        safety check --json --output safety-report.json || true
+
+  performance-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+        pip install locust
+        
+    - name: Run performance tests
+      run: |
+        cd backend
+        # Start server in background
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+        sleep 10
+        # Run load test
+        locust -f tests/load_test.py --headless -u 10 -r 2 -t 30s --host http://localhost:8000
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-extension, security-scan]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        STAGING_SERVICE_ID: ${{ secrets.STAGING_SERVICE_ID }}
+      run: |
+        curl -X POST "https://api.render.com/v1/services/$STAGING_SERVICE_ID/deploys" \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{"clearCache": false}'
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-extension, security-scan]
+    if: github.ref == 'refs/heads/main'
+    
+    environment:
+      name: production
+      url: https://your-api.onrender.com
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        PRODUCTION_SERVICE_ID: ${{ secrets.PRODUCTION_SERVICE_ID }}
+      run: |
+        curl -X POST "https://api.render.com/v1/services/$PRODUCTION_SERVICE_ID/deploys" \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{"clearCache": false}'
+    
+    - name: Update Chrome Web Store
+      env:
+        CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+        CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+        CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+        CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+      run: |
+        # Package extension
+        cd extension
+        zip -r ../factcheckai-extension.zip .
+        cd ..
+        
+        # Upload to Chrome Web Store (simplified)
+        echo "Extension packaged for Chrome Web Store upload"

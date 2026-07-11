@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Quota Management Routes
 
@@ -11,7 +12,7 @@ import logging
 from datetime import datetime, timedelta
 
 from database import get_db
-from app.models import User, ClaimRecord
+from app.models import User, ClaimRecord, ChatMessage, ChatSession
 from app.auth import get_current_user
 from app.rate_limit import rate_limiter, TIER_LIMITS
 from sqlalchemy import func
@@ -43,15 +44,25 @@ async def get_usage(
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
     
-    claims_this_month = db.query(func.count(ClaimRecord.id)).filter(
-        ClaimRecord.user_id == user.id,
-        ClaimRecord.created_at >= month_start,
-        ClaimRecord.created_at <= month_end
+    # Count claims via ChatMessage (ClaimRecord has no user_id column)
+    # A "claim" = assistant message with is_claim=True in any session owned by this user
+    claims_this_month = db.query(func.count(ChatMessage.id)).join(
+        ChatSession, ChatMessage.session_id == ChatSession.id
+    ).filter(
+        ChatSession.user_id == user.id,
+        ChatMessage.is_claim == True,
+        ChatMessage.role == "assistant",
+        ChatMessage.created_at >= month_start,
+        ChatMessage.created_at <= month_end
     ).scalar() or 0
-    
-    # Get total usage
-    total_claims = db.query(func.count(ClaimRecord.id)).filter(
-        ClaimRecord.user_id == user.id
+
+    # Get total usage (all time)
+    total_claims = db.query(func.count(ChatMessage.id)).join(
+        ChatSession, ChatMessage.session_id == ChatSession.id
+    ).filter(
+        ChatSession.user_id == user.id,
+        ChatMessage.is_claim == True,
+        ChatMessage.role == "assistant",
     ).scalar() or 0
     
     # Calculate quota info
@@ -139,43 +150,13 @@ async def upgrade_tier(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
-    Upgrade user to a higher tier.
-    
-    Note: This is a placeholder. In production, integrate with
-    payment processor (Stripe, PayPal, etc.)
+    Tier upgrade endpoint — disabled until payment integration is complete.
+    Returns 501 Not Implemented to prevent free tier escalation.
     """
-    # Validate tier
-    if target_tier not in ["pro", "enterprise"]:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid tier. Must be 'pro' or 'enterprise'"
-        )
-    
-    # Check current tier
-    current_tier = rate_limiter.get_user_tier(user)
-    
-    # Prevent downgrade (for now)
-    tier_order = {"free": 0, "pro": 1, "enterprise": 2}
-    if tier_order.get(target_tier, 0) <= tier_order.get(current_tier, 0):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot upgrade from {current_tier} to {target_tier}"
-        )
-    
-    # TODO: Integrate with payment processor
-    # For now, just update the tier (demo mode)
-    user.tier = target_tier
-    db.commit()
-    
-    logger.info(f"User {user.id} upgraded from {current_tier} to {target_tier}")
-    
-    return {
-        "success": True,
-        "message": f"Successfully upgraded to {target_tier}",
-        "previous_tier": current_tier,
-        "new_tier": target_tier,
-        "new_limits": TIER_LIMITS[target_tier],
-    }
+    raise HTTPException(
+        status_code=501,
+        detail="Tier upgrades are not yet available. Contact support to upgrade your account."
+    )
 
 
 @router.get("/history")
@@ -190,20 +171,24 @@ async def get_usage_history(
     Returns daily claim counts for visualization.
     """
     from sqlalchemy import func, cast, Date
-    
-    # Get claims grouped by date
+
+    # Count claims via ChatMessage (ClaimRecord has no user_id column)
     cutoff_date = datetime.utcnow() - timedelta(days=days)
-    
+
     results = db.query(
-        cast(ClaimRecord.created_at, Date).label("date"),
-        func.count(ClaimRecord.id).label("count")
+        cast(ChatMessage.created_at, Date).label("date"),
+        func.count(ChatMessage.id).label("count")
+    ).join(
+        ChatSession, ChatMessage.session_id == ChatSession.id
     ).filter(
-        ClaimRecord.user_id == user.id,
-        ClaimRecord.created_at >= cutoff_date
+        ChatSession.user_id == user.id,
+        ChatMessage.is_claim == True,
+        ChatMessage.role == "assistant",
+        ChatMessage.created_at >= cutoff_date
     ).group_by(
-        cast(ClaimRecord.created_at, Date)
+        cast(ChatMessage.created_at, Date)
     ).order_by(
-        cast(ClaimRecord.created_at, Date)
+        cast(ChatMessage.created_at, Date)
     ).all()
     
     # Format results

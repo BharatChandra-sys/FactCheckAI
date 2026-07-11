@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 News evidence fetching with:
 - Brave Search API (primary, real-time) with NewsAPI fallback

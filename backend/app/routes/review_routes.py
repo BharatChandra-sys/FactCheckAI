@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Review Queue Routes — PiNE AI
 
@@ -231,13 +232,8 @@ def submit_review(
             logger.debug("Continuous learning check failed: %s", e)
             retrain_triggered = False
 
-    # WebSocket notification
-    try:
-        from app.websocket import notify_review_queue_update
-        import asyncio
-        asyncio.create_task(notify_review_queue_update("all"))
-    except Exception:
-        pass
+    # WebSocket notification — use BackgroundTasks to avoid asyncio.create_task in sync context
+    background_tasks.add_task(_notify_review_update)
 
     return {
         "success":          True,
@@ -247,6 +243,16 @@ def submit_review(
         "is_viral_claim":   is_viral_claim,
         "retrain_triggered": retrain_triggered,
     }
+
+
+def _notify_review_update():
+    """Background-safe wrapper for the async WebSocket notification."""
+    import asyncio
+    try:
+        from app.websocket import notify_review_queue_update
+        await notify_review_queue_update("all")
+    except Exception as e:
+        logger.debug("WebSocket notify failed: %s", e)
 
 
 def _trigger_retrain_for_viral(db, claim_text: str, correct_verdict: str):

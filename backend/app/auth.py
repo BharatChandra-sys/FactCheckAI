@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Authentication utilities
 
@@ -16,7 +17,14 @@ from database import get_db
 from app.models import User
 
 # JWT configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+# Read from JWT_SECRET (canonical name used in .env and deployment dashboards).
+# Fail fast at startup if missing — never silently use an insecure default.
+SECRET_KEY = os.getenv("JWT_SECRET") or os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError(
+        "JWT_SECRET environment variable is required. "
+        "Generate one with: openssl rand -hex 32"
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 

@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Cloud Model Inference — PiNE AI
 ================================
@@ -361,7 +362,7 @@ def get_inoculation(claim_text: str) -> Optional[dict]:
         if keys.get("groq"):
             fns.append(("Groq", lambda: _call_openai_compat(
                 "https://api.groq.com/openai/v1/chat/completions",
-                keys["groq"], "llama3-8b-8192", msgs, max_tokens=80, temperature=0
+                keys["groq"], "llama-3.3-70b-versatile", msgs, max_tokens=80, temperature=0
             )))
         if keys.get("cerebras"):
             fns.append(("Cerebras", lambda: _call_openai_compat(

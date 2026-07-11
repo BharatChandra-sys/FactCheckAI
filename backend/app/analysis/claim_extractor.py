@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Claim Extraction
 
@@ -53,7 +54,7 @@ def _call_llm_extract(text: str) -> list:
     if keys.get("groq"):
         fns.append(("Groq", lambda: _call_openai_compat(
             "https://api.groq.com/openai/v1/chat/completions",
-            keys["groq"], "llama3-8b-8192", messages, max_tokens=200, temperature=0
+            keys["groq"], "llama-3.3-70b-versatile", messages, max_tokens=200, temperature=0
         )))
     if keys.get("gemini"):
         fns.append(("Gemini", lambda: _call_gemini(messages, max_tokens=200, temperature=0)))

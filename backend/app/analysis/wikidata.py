@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Wikidata Entity Verification + Transformer NER
 

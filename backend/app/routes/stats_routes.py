@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Stats API — feeds the dashboard with system intelligence metrics.
 """

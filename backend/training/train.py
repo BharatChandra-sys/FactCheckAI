@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 Train fake news classifier on merged datasets.
 

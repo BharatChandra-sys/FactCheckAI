@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, field_validator
@@ -94,7 +95,7 @@ def google_auth(req: GoogleRequest, db: Session = Depends(get_db)):
     else:
         raise HTTPException(status_code=400, detail="Provide id_token or access_token")
 
-    google_id = info["sub"]
+    google_id = info["google_id"]
     email     = info.get("email", "")
     name      = info.get("name", "")
     picture   = info.get("picture", "")

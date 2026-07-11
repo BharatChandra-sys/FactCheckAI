@@ -1,3 +1,4 @@
+# Ownership notice: Bodapati Bharat chandra
 """
 WebSocket Routes
 
@@ -111,15 +112,8 @@ async def websocket_endpoint(
 
 
 @router.get("/stats")
-async def get_websocket_stats():
-    """
-    Get WebSocket connection statistics.
-    
-    Returns:
-    - active_users: Number of authenticated users connected
-    - total_connections: Total number of active connections
-    - rooms: List of active rooms with connection counts
-    """
+async def get_websocket_stats(user: User = Depends(get_current_user)):
+    """WebSocket connection statistics — requires authentication."""
     
     rooms_info = {}
     for room, connections in manager.rooms.items():
