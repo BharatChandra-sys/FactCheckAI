@@ -1,8 +1,17 @@
-# Environment & secrets
+# ============================================================================
+# FactCheckAI — .gitignore
+# Copyright 2027 Bharat Chandra. All rights reserved.
+# Licensed under the Apache License, Version 2.0
+# ============================================================================
+
+# Environment & secrets — NEVER commit these
 .env
 *.env
 .env.*
 !.env.example
+backend/.env
+backend/.env.local
+backend/.env.production
 
 # Python
 __pycache__/
@@ -16,6 +25,7 @@ build/
 .venv/
 venv/
 backend/venv/
+backend/.venv/
 .pytest_cache/
 *.py[cod]
 *$py.class
@@ -47,6 +57,44 @@ backend/training/models/domain_specific/
 backend/training/data/domain_specific/
 backend/training/data/multilingual/
 
+# ── Keep-local documentation ─────────────────────────────────
+# These are local development files — NOT for GitHub
+ARCHITECTURE_DIAGRAM.md
+CLAUDE.md
+CREDIT_SYSTEM.md
+DEPLOYMENT_CHECKLIST.md
+DEPLOYMENT_JOURNEY.md
+GET_STARTED.md
+QUICKSTART_FREE.md
+DEPLOYMENT_100_PERCENT_FREE.md
+DEPLOYMENT_GITHUB_STUDENT.md
+DEPLOYMENT_NO_CREDIT_CARD.md
+DEPLOYMENT_FREE_TRANSFORMER.md
+DEPLOYMENT_HYBRID.md
+DEPLOYMENT_DIGITALOCEAN_STUDENT.md
+DEPLOYMENT_GITHUB_STUDENT_PACK_COMPLETE.md
+PRODUCTION_READINESS_AUDIT.md
+FINAL_PRODUCTION_AUDIT_FIXES.md
+TODO.md
+
+# Windsurf / Cursor / IDE rules (local only)
+.windsurfrules
+.cursorrules
+.cursorignore
+
+# ── Test/debug JSON files ─────────────────────────────────────
+# These are local test artifacts — NOT for GitHub
+test_cerebras.json
+test_claim.json
+test_claim2.json
+test_gemini.json
+test_groq.json
+test_groq_new.json
+test_message.json
+claim_response.json
+*.test.json
+test_*.json
+
 # Test files
 test_*.py
 *_test.py
@@ -54,14 +102,14 @@ comprehensive_test.py
 test_api.py
 SIMPLE_MODEL_CHECK.py
 TEST_MODEL_FROM_HF.py
+recreate_nijam_history.py
 !backend/tests/
 
-# Documentation cleanup - phase plans and completed work
+# Old documentation patterns (local only)
 PHASE_*.md
 COMPLETE*.md
 WORK_COMPLETE*.md
 CODE_QUALITY*.md
-*_PLAN.md
 *_IMPLEMENTATION.md
 *_SUMMARY.md
 !PROGRESS_SUMMARY.md
@@ -89,30 +137,21 @@ PRODUCTION_TRAINING_*.md
 HF_UPLOAD_*.md
 commands.txt
 
-# ML model artifacts — committed so Render doesn't need to retrain on every deploy
-# Uncomment below if you want to exclude them and retrain on startup instead
-# backend/data/model.joblib
-# backend/data/vectorizer.joblib
-# backend/data/meta_model.joblib
+# Digital Ocean app config (now replaced by Heroku/Render)
+digitalocean-app.yaml
 
-# Node
-node_modules/
-package-lock.json
-yarn.lock
-
-# OS
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-*~
-
-# IDE
+# ── IDE & OS ──────────────────────────────────────────────────
 .vscode/
 .idea/
 .kiro/
 *.code-workspace
 .sixth/
+.superdesign/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
 
 # Logs
 *.log
@@ -124,3 +163,14 @@ logs/
 *.temp
 *.bak
 *.backup
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+
+# ML model artifacts
+# Uncomment below if you want to exclude them and retrain on startup instead
+# backend/data/model.joblib
+# backend/data/vectorizer.joblib
+# backend/data/meta_model.joblib

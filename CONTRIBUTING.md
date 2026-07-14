@@ -1,3 +1,6 @@
+<!-- Copyright 2027 Bodapati Bharat Chandra. All rights reserved. -->
+<!-- Licensed under the Apache License, Version 2.0 | SPDX-License-Identifier: Apache-2.0 -->
+
 # Contributing to FactCheckAI
 
 We welcome contributions from the community! This guide will help you get started with contributing to FactCheckAI.

@@ -1,0 +1,85 @@
+FactCheckAI
+Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+================================================================================
+OWNERSHIP & ATTRIBUTION
+================================================================================
+
+Original Author:  Bodapati Bharat Chandra
+Project:          FactCheckAI — Enterprise-grade Fake News Detection
+Repository:       https://github.com/BharatChandra-sys/fake-news-extension
+Contact:          factcheckai2@gmail.com
+Version:          2.6.1
+Date:             2027
+
+================================================================================
+THIRD-PARTY SOFTWARE NOTICES
+================================================================================
+
+This product includes the following open-source software:
+
+FastAPI — Copyright © 2018 Sebastián Ramírez
+License: MIT — https://github.com/tiangolo/fastapi/blob/master/LICENSE
+
+Transformers (Hugging Face) — Copyright © 2018 The Hugging Face Team
+License: Apache 2.0 — https://github.com/huggingface/transformers/blob/main/LICENSE
+
+PyTorch — Copyright © 2016-present Facebook, Inc.
+License: Modified BSD — https://github.com/pytorch/pytorch/blob/main/LICENSE
+
+scikit-learn — Copyright © 2007-2023 scikit-learn developers
+License: BSD 3-Clause — https://github.com/scikit-learn/scikit-learn/blob/main/COPYING
+
+SQLAlchemy — Copyright © 2005-2023 SQLAlchemy authors
+License: MIT — https://github.com/sqlalchemy/sqlalchemy/blob/main/LICENSE
+
+Pydantic — Copyright © 2017 Samuel Colvin
+License: MIT — https://github.com/pydantic/pydantic/blob/main/LICENSE
+
+Alembic — Copyright © 2009-2023 Mike Bayer
+License: MIT — https://github.com/sqlalchemy/alembic/blob/main/LICENSE
+
+bcrypt — Copyright © 2013 Donald Stufft
+License: Apache 2.0 — https://github.com/pyca/bcrypt/blob/main/LICENSE
+
+python-jose — Copyright © 2016 Jeff Lindsay
+License: MIT — https://github.com/mpdavis/python-jose/blob/master/LICENSE
+
+google-auth — Copyright © 2014 Google LLC
+License: Apache 2.0 — https://github.com/googleapis/google-auth-library-python/blob/main/LICENSE
+
+langdetect — Copyright © 2014 Shuyo Nakatani (port by Michal Mimino Danilak)
+License: Apache 2.0 — https://github.com/Mimino666/langdetect/blob/master/LICENSE
+
+================================================================================
+RESEARCH ATTRIBUTION
+================================================================================
+
+This project uses or references the following datasets and research:
+
+LIAR Dataset — Wang, W. Y. (2017). "Liar, Liar Pants on Fire": A New Benchmark
+Dataset for Fake News Detection. ACL 2017.
+
+FakeNewsNet — Shu, K. et al. (2018). FakeNewsNet: A Data Repository with News
+Content, Social Context and Spatiotemporal Information for Studying Fake News
+on Social Media. arXiv:1809.01286.
+
+FEVER — Thorne, J. et al. (2018). FEVER: a Large-scale Dataset for Fact
+Extraction and VERification. NAACL 2018.
+
+================================================================================
+
+All product names, logos, and brands are property of their respective owners.
+Use of these names, logos, and brands does not imply endorsement.

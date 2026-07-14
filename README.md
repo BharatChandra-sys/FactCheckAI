@@ -1,16 +1,19 @@
+<!-- Copyright 2027 Bodapati Bharat Chandra. All rights reserved. -->
+<!-- Licensed under the Apache License, Version 2.0 | SPDX-License-Identifier: Apache-2.0 -->
+
 <p align="center">
   <img src="extension/icons/icon128.png" alt="FactCheckAI" width="128" height="128"/>
   <h1 align="center">FactCheckAI</h1>
 </p>
 
 <p align="center">
-  <a href="https://github.com/yourusername/fake-news-extension/stargazers">
-    <img src="https://img.shields.io/github/stars/yourusername/fake-news-extension?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
+  <a href="https://github.com/BharatChandra-sys/fake-news-extension/stargazers">
+    <img src="https://img.shields.io/github/stars/BharatChandra-sys/fake-news-extension?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
   </a>
   <a href="https://chromewebstore.google.com/detail/factcheckai">
     <img src="https://img.shields.io/badge/Chrome-Web%20Store-4F46E5?style=for-the-badge&logo=googlechrome&labelColor=1e1e2e" alt="Chrome Web Store"/>
   </a>
-  <a href="https://github.com/yourusername/fake-news-extension/blob/main/LICENSE">
+  <a href="https://github.com/BharatChandra-sys/fake-news-extension/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-Apache%202.0-22c55e?style=for-the-badge&labelColor=1e1e2e" alt="License"/>
   </a>
   <a href="https://your-api.onrender.com/health">
@@ -138,7 +141,7 @@ def route_request(content: str, user_priority: str):
 
 2. **Load Unpacked (Developers)**
    ```bash
-   git clone https://github.com/yourusername/fake-news-extension.git
+   git clone https://github.com/BharatChandra-sys/fake-news-extension.git
    cd fake-news-extension
    
    # Open Chrome → Extensions → Developer mode → Load unpacked
@@ -358,7 +361,7 @@ curl -H "Authorization: Bearer <jwt_token>" \
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/fake-news-extension.git
+git clone https://github.com/BharatChandra-sys/fake-news-extension.git
 cd fake-news-extension
 
 # Backend setup
@@ -573,9 +576,9 @@ If you use FactCheckAI in research, please cite:
 ```bibtex
 @software{factcheckai2027,
   title={FactCheckAI: Enterprise-grade Fake News Detection},
-  author={[YOUR_NAME_HERE]},
+  author={Bodapati Bharat Chandra},
   year={2027},
-  url={https://github.com/yourusername/fake-news-extension},
+  url={https://github.com/BharatChandra-sys/fake-news-extension},
   version={2.6.1},
   license={Apache-2.0}
 }
@@ -599,12 +602,12 @@ If you use FactCheckAI in research, please cite:
   <br/>
   <b>Trusted by 50,000+ users worldwide for reliable fact-checking</b>
   <br/><br/>
-  <a href="https://github.com/yourusername/fake-news-extension/stargazers">
-    <img src="https://img.shields.io/github/stars/yourusername/fake-news-extension?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
+  <a href="https://github.com/BharatChandra-sys/fake-news-extension/stargazers">
+    <img src="https://img.shields.io/github/stars/BharatChandra-sys/fake-news-extension?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
   </a>
   <br/><br/>
   <a href="INFRASTRUCTURE_PLAN.md">Infrastructure Guide</a> •
   <a href="https://your-api-docs.com">API Documentation</a> •
-  <a href="https://github.com/yourusername/fake-news-extension/issues">Report Issues</a> •
+  <a href="https://github.com/BharatChandra-sys/fake-news-extension/issues">Report Issues</a> •
   <a href="https://discord.gg/factcheckai">Join Community</a>
 </p>

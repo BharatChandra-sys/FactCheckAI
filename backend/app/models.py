@@ -1,4 +1,7 @@
-# Ownership notice: Bodapati Bharat chandra
+# Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
+# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: Apache-2.0
+# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from database import Base
