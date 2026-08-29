@@ -110,25 +110,76 @@ logging.getLogger("uvicorn.access").addFilter(_SuppressHealthLogs())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
 
-    # ── Run Alembic migrations (safe to run on every startup; no-op if up to date) ──
+    # ── Step 1: Verify database connectivity ─────────────────
+    # Retry up to 5 times with backoff — Neon wakes from auto-suspend in ~1s
+    import time as _time
+    from sqlalchemy import text as _text
+
+    _db_ok = False
+    for attempt in range(1, 6):
+        try:
+            with engine.connect() as _conn:
+                _conn.execute(_text("SELECT 1"))
+            _db_ok = True
+            logger.info("Database connection verified (attempt %d)", attempt)
+            break
+        except Exception as e:
+            wait = attempt * 2  # 2s, 4s, 6s, 8s, 10s
+            logger.warning("DB connection attempt %d failed: %s — retrying in %ds", attempt, e, wait)
+            _time.sleep(wait)
+
+    if not _db_ok:
+        logger.error("Database unreachable after 5 attempts — check DATABASE_URL and Neon project status")
+        # Don't crash — app can still serve health checks and static responses
+
+    # ── Step 2: Create all tables from SQLAlchemy models ─────
+    # create_all is idempotent — skips existing tables, creates missing ones
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Table check complete (create_all — no-op for existing tables)")
+    except Exception as e:
+        logger.error("create_all failed: %s", e)
+
+    # ── Step 3: Run Alembic migrations ───────────────────────
+    # Runs on every deploy — no-op if already at head
+    # Adds new columns/indexes without dropping existing data
     try:
         import subprocess, sys
         alembic_ini = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "alembic.ini")
         if os.path.exists(alembic_ini):
             result = subprocess.run(
                 [sys.executable, "-m", "alembic", "-c", alembic_ini, "upgrade", "head"],
-                capture_output=True, text=True, timeout=60
+                capture_output=True, text=True, timeout=120,
+                env={**os.environ, "PYTHONUNBUFFERED": "1"},
             )
             if result.returncode == 0:
-                logger.info("Alembic migrations applied: %s", result.stdout.strip() or "up to date")
+                out = result.stdout.strip() or "already at head"
+                logger.info("Alembic migrations: %s", out)
             else:
                 logger.warning("Alembic migration warning: %s", result.stderr.strip())
         else:
-            logger.debug("alembic.ini not found — skipping migrations (SQLite dev mode)")
+            logger.debug("alembic.ini not found — skipping Alembic (SQLite dev mode)")
+    except subprocess.TimeoutExpired:
+        logger.error("Alembic migration timed out after 120s")
     except Exception as e:
-        logger.warning("Alembic migration failed: %s — continuing with create_all", e)
+        logger.warning("Alembic migration failed: %s — tables already created via create_all", e)
+
+    # ── Step 4: Verify critical tables exist ─────────────────
+    # Belt-and-suspenders check: log any model table that's missing from DB
+    from sqlalchemy import inspect as _inspect
+    try:
+        inspector   = _inspect(engine)
+        db_tables   = set(inspector.get_table_names())
+        model_tables = set(Base.metadata.tables.keys())
+        missing = model_tables - db_tables
+        if missing:
+            logger.warning("Tables still missing after migration: %s — attempting create_all again", missing)
+            Base.metadata.create_all(bind=engine)
+        else:
+            logger.info("All %d model tables present in database", len(model_tables))
+    except Exception as e:
+        logger.warning("Table verification failed: %s", e)
 
     # ── Load TF-IDF model only (fast, ~50ms) ──────────────────
     # RoBERTa is NOT preloaded — it's 500MB and would time out Render's

@@ -5,7 +5,6 @@
 import os
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.pool import NullPool
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -25,13 +24,23 @@ if DATABASE_URL.startswith("postgres://"):
 
 is_sqlite = DATABASE_URL.startswith("sqlite")
 
+# ── Neon-specific: strip pgbouncer=true from SQLAlchemy URL ──
+# pgbouncer=true is a Neon hint for their proxy — SQLAlchemy doesn't understand it.
+# We use it to detect when pooled mode is active and set pool_pre_ping accordingly.
+_is_neon_pooled = "pgbouncer=true" in DATABASE_URL
+if _is_neon_pooled:
+    DATABASE_URL = DATABASE_URL.replace("&pgbouncer=true", "").replace("?pgbouncer=true", "")
+    # Rebuild query string correctly if pgbouncer was the only param
+    if DATABASE_URL.endswith("?"):
+        DATABASE_URL = DATABASE_URL[:-1]
+
 if is_sqlite:
     engine = create_engine(
         DATABASE_URL,
         connect_args={"check_same_thread": False},
         pool_pre_ping=True,
     )
-    # Enable WAL mode for SQLite — dramatically improves concurrent read/write
+    # WAL mode — dramatically improves concurrent read/write
     @event.listens_for(engine, "connect")
     def _set_sqlite_pragma(dbapi_conn, _):
         cursor = dbapi_conn.cursor()
@@ -41,24 +50,29 @@ if is_sqlite:
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 else:
-    # PostgreSQL production settings
-    # pool_size tuned for Aiven free tier (~25 max connections)
-    # Each gunicorn worker gets its own pool so total = workers × pool_size
-    _workers = int(os.getenv("WEB_CONCURRENCY", "2"))
-    _pool_per_worker = max(2, 18 // _workers)   # stay well under 25 total
+    # PostgreSQL / Neon production settings
+    # Neon free tier: up to 100 pooled connections via pgBouncer
+    # Render free: 1 worker — pool_size=2 is enough
+    _workers = int(os.getenv("WEB_CONCURRENCY", "1"))
+    _pool_per_worker = max(2, 10 // _workers)
+
+    _connect_args = {
+        "connect_timeout": 10,
+        "options": "-c statement_timeout=30000",  # 30s max query time
+    }
+
+    # Neon requires sslmode=require — enforce it
+    if "neon.tech" in DATABASE_URL and "sslmode" not in DATABASE_URL:
+        DATABASE_URL += ("&" if "?" in DATABASE_URL else "?") + "sslmode=require"
 
     engine = create_engine(
         DATABASE_URL,
-        pool_pre_ping=True,          # reconnect on stale connections
+        pool_pre_ping=True,          # detects stale connections (Neon auto-suspend)
         pool_size=_pool_per_worker,
-        max_overflow=2,              # small burst headroom
-        pool_timeout=20,             # fail fast — don't queue too long
-        pool_recycle=900,            # recycle every 15 min (avoids idle timeout)
-        # Explicit statement timeout — kills runaway queries
-        connect_args={
-            "options": "-c statement_timeout=30000",   # 30s max query time
-            "connect_timeout": 10,
-        },
+        max_overflow=2,
+        pool_timeout=20,
+        pool_recycle=900,            # recycle every 15 min (before Neon idles)
+        connect_args=_connect_args,
     )
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
