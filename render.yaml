@@ -1,20 +1,18 @@
-# render.yaml — Render deployment config for FactCheckAI FastAPI backend
-# Deploy via: Render Dashboard → New → Blueprint → connect this repo
+# render.yaml — FactCheckAI deployment
+# GitHub Student Pack + Render free tier + Neon PostgreSQL
 #
-# ARCHITECTURE:
-#   Account A (this file): FastAPI web service only
-#   Account B (separate):  PostgreSQL free database
-#
-# The DATABASE_URL must be manually set in Render dashboard
-# after creating the DB on Account B.
+# SETUP ORDER:
+#   1. Create Neon DB at neon.tech → copy DATABASE_URL
+#   2. Connect repo to Render → New → Blueprint → render.yaml
+#   3. Set env vars in Render dashboard (marked sync: false)
+#   4. Deploy
 
 services:
   - type: web
     name: factcheckai-backend
     runtime: python
-    region: oregon          # US West — lowest latency for most users
-    plan: free              # 512MB RAM, 0.1 vCPU, sleeps after 15min idle
-                            # UptimeRobot pings /health every 5min to prevent sleep
+    region: oregon
+    plan: free              # 512MB RAM, sleeps after 15min — UptimeRobot prevents this
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app.main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120 --keep-alive 75
@@ -23,15 +21,15 @@ services:
     envVars:
       # ── Security ──────────────────────────────────────────────
       - key: JWT_SECRET
-        generateValue: true           # Render auto-generates a secure random value
+        generateValue: true           # Render auto-generates secure random value
 
-      # ── Database — Aiven PostgreSQL free tier ─────────────────
-      # Get this from Aiven console: Services → your-pg → Connection info → URI
-      # Format: postgresql://avnadmin:<password>@<host>:<port>/<dbname>?sslmode=require
+      # ── Database — Neon PostgreSQL (free tier) ────────────────
+      # Get from: neon.tech → your project → Connection string
+      # Format: postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
       - key: DATABASE_URL
-        sync: false                   # Paste Aiven connection URI in Render dashboard
+        sync: false
 
-      # ── AI API Keys — set manually in Render dashboard ────────
+      # ── AI API Keys ───────────────────────────────────────────
       - key: CEREBRAS_API_KEY
         sync: false
       - key: GROQ_API_KEY
@@ -42,32 +40,22 @@ services:
         sync: false
       - key: NEWS_API_KEY
         sync: false
+
+      # ── Optional keys — leave blank to disable those features ─
       - key: SERPAPI_KEY
         sync: false
       - key: GOOGLE_FACTCHECK_API_KEY
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
-
-      # ── Email ─────────────────────────────────────────────────
       - key: BREVO_API_KEY
         sync: false
       - key: SMTP_USER
         sync: false
-
-      # ── ML Servers ────────────────────────────────────────────
-      - key: ML_SERVER_1_URL
-        sync: false                   # DigitalOcean droplet: http://<ip>:8001
-      - key: ML_SERVER_2_URL
-        sync: false                   # HuggingFace Spaces: https://<user>-<space>.hf.space
-      - key: ML_API_KEY
-        sync: false                   # Shared secret between backend and ML servers
-
-      # ── HuggingFace (for Inference API calls) ─────────────────
       - key: HF_TOKEN
         sync: false
 
-      # ── App configuration ─────────────────────────────────────
+      # ── App flags ─────────────────────────────────────────────
       - key: ENVIRONMENT
         value: production
       - key: ENABLE_DOCS
@@ -75,10 +63,12 @@ services:
       - key: LOG_LEVEL
         value: INFO
       - key: SKIP_TRAIN_ON_STARTUP
-        value: "true"                 # Model files must be committed to repo
+        value: "true"
       - key: WIKIDATA_ENABLED
         value: "false"
       - key: SOCIAL_GRAPH_ENABLED
         value: "false"
       - key: REDIS_ENABLED
-        value: "false"                # No Redis on free tier — in-memory rate limit only
+        value: "false"
+      - key: WEB_CONCURRENCY
+        value: "1"
