@@ -56,6 +56,8 @@ production_model_onnx/
 backend/training/models/domain_specific/
 backend/training/data/domain_specific/
 backend/training/data/multilingual/
+backend/training/KAGGLE_EXECUTION_PLAN.md
+backend/training/UPLOAD_CHECKLIST.md
 
 # ── Keep-local documentation ─────────────────────────────────
 # These are local development files — NOT for GitHub
@@ -64,6 +66,7 @@ CLAUDE.md
 CREDIT_SYSTEM.md
 DEPLOYMENT_CHECKLIST.md
 DEPLOYMENT_JOURNEY.md
+DEPLOYMENT_SUMMARY.md
 GET_STARTED.md
 QUICKSTART_FREE.md
 DEPLOYMENT_100_PERCENT_FREE.md
@@ -75,6 +78,7 @@ DEPLOYMENT_DIGITALOCEAN_STUDENT.md
 DEPLOYMENT_GITHUB_STUDENT_PACK_COMPLETE.md
 PRODUCTION_READINESS_AUDIT.md
 FINAL_PRODUCTION_AUDIT_FIXES.md
+TECHNICAL_DOCUMENTATION.md
 TODO.md
 
 # Windsurf / Cursor / IDE rules (local only)
