@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 """
 SHAP Explanation Routes
 
@@ -26,6 +26,31 @@ from ..analysis import ml
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/explain", tags=["explain"])
+
+# ── Module-level model cache — loaded once, not per-request ──
+import os as _os
+import joblib as _joblib
+
+_base_dir   = _os.path.dirname(_os.path.dirname(_os.path.dirname(__file__)))
+_data_dir   = _os.path.join(_base_dir, "data")
+_model_path = _os.path.join(_data_dir, "model.joblib")
+_vec_path   = _os.path.join(_data_dir, "vectorizer.joblib")
+
+_cached_model      = None
+_cached_vectorizer = None
+
+
+def _get_models():
+    """Load models from disk once, cache in module globals."""
+    global _cached_model, _cached_vectorizer
+    if _cached_model is None and _os.path.exists(_model_path):
+        try:
+            _cached_model      = _joblib.load(_model_path)
+            _cached_vectorizer = _joblib.load(_vec_path)
+            logger.info("Explain models loaded into module cache")
+        except Exception as e:
+            logger.warning("Explain model load failed: %s", e)
+    return _cached_model, _cached_vectorizer
 
 
 @router.post("", response_model=ExplainResponse)
@@ -69,27 +94,24 @@ def explain_claim(
         model_path = os.path.join(data_dir, "model.joblib")
         vec_path = os.path.join(data_dir, "vectorizer.joblib")
         
-        # Auto-detect model type if needed
-        if model_type == "auto":
-            # Try to determine from available models
-            ml_result = ml.run_ml_analysis(text)
-            model_type = ml_result.get("source", "tfidf")
-            if model_type not in ["tfidf", "roberta", "deberta"]:
-                model_type = "tfidf"
-            if model_type in ["roberta", "deberta"]:
-                model_type = "transformer"
-        
-        # Get prediction first
-        ml_result = ml.run_ml_analysis(text)
-        fake_prob = ml_result.get("fake", 0.5)
-        verdict = "fake" if fake_prob >= 0.5 else "real"
+        # Get ML result once — used for both model-type detection and prediction
+        ml_result  = ml.run_ml_analysis(text)
+        fake_prob  = ml_result.get("fake", 0.5)
+        verdict    = "fake" if fake_prob >= 0.5 else "real"
         confidence = abs(fake_prob - 0.5) * 2
-        
+
+        if model_type == "auto":
+            src = ml_result.get("source", "tfidf")
+            model_type = "transformer" if src in ("roberta", "deberta") else "tfidf"
+
         prediction = {
             "verdict": verdict,
             "confidence": round(confidence, 3),
-            "fake_probability": round(fake_prob, 3)
+            "fake_probability": round(fake_prob, 3),
         }
+
+        # Use cached models (no disk I/O after first call)
+        cached_model, cached_vectorizer = _get_models()
         
         # Generate SHAP explanation
         shap_explanation = None

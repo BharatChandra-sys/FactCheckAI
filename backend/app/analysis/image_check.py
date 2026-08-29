@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 """
 Image + Text Consistency Checker
 
@@ -264,3 +264,196 @@ def analyze_image_full(claim_text: str, image_source: str) -> dict:
         logger.debug("Cloud image analysis failed: %s", e)
 
     return base
+
+
+# ── SerpAPI Reverse Image Search (item 101) ──────────────────
+
+def reverse_image_search(image_url: str) -> dict:
+    """
+    Reverse image search via SerpAPI to find original source of an image.
+    Item 101: Detect out-of-context image reuse (old photo presented as new).
+
+    Requires SERPAPI_KEY in environment.
+
+    Returns:
+        {
+          "source_pages": list of {title, link, thumbnail},
+          "earliest_date": str | None,
+          "reuse_risk": float 0-1,
+          "flag": str | None
+        }
+    """
+    serpapi_key = os.getenv("SERPAPI_KEY")
+    if not serpapi_key:
+        logger.debug("SERPAPI_KEY not set — reverse image search skipped")
+        return {"source_pages": [], "reuse_risk": 0.0, "flag": None}
+
+    if not image_url or not image_url.startswith("http"):
+        return {"source_pages": [], "reuse_risk": 0.0, "flag": None}
+
+    try:
+        r = _session.get(
+            "https://serpapi.com/search",
+            params={
+                "engine":    "google_reverse_image",
+                "image_url": image_url,
+                "api_key":   serpapi_key,
+                "num":       5,
+            },
+            timeout=15,
+        )
+        if r.status_code != 200:
+            logger.warning("SerpAPI reverse image returned %s", r.status_code)
+            return {"source_pages": [], "reuse_risk": 0.0, "flag": None}
+
+        data = r.json()
+        pages = []
+
+        # Extract inline images / pages that show this image
+        for item in data.get("inline_images", [])[:5]:
+            pages.append({
+                "title": item.get("title", ""),
+                "link":  item.get("link", ""),
+                "source": item.get("source", ""),
+            })
+
+        for item in data.get("image_results", [])[:5]:
+            pages.append({
+                "title": item.get("title", ""),
+                "link":  item.get("link", ""),
+                "source": item.get("displayed_link", ""),
+            })
+
+        # High reuse count → image may be taken out of context
+        reuse_risk = min(len(pages) / 10.0, 0.7) if len(pages) > 3 else 0.0
+
+        logger.info("Reverse image search found %d source pages, reuse_risk=%.2f",
+                    len(pages), reuse_risk)
+
+        return {
+            "source_pages": pages[:5],
+            "reuse_risk":   round(reuse_risk, 3),
+            "flag":         "recycled_image" if reuse_risk > 0.4 else None,
+        }
+
+    except Exception as e:
+        logger.debug("SerpAPI reverse image search failed: %s", e)
+        return {"source_pages": [], "reuse_risk": 0.0, "flag": None}
+
+
+# ── AI-Generated Image Detection (item 106) ──────────────────
+
+_AI_IMAGE_MODEL = "umm-maybe/AI-image-detector"
+
+def detect_ai_generated_image(image_b64: str) -> dict:
+    """
+    Detect whether an image was AI-generated (synthetic media).
+    Item 106: Distinct from deepfake detection — catches GAN/diffusion outputs.
+
+    Uses umm-maybe/AI-image-detector via HuggingFace Inference API.
+
+    Returns:
+        {"is_ai_generated": bool, "confidence": float, "label": str} or None
+    """
+    hf_token = os.getenv("HF_TOKEN", "")
+    if not hf_token:
+        logger.debug("HF_TOKEN not set — AI-image detection skipped")
+        return None
+
+    if "base64," in image_b64:
+        image_b64 = image_b64.split("base64,")[1]
+
+    try:
+        image_bytes = base64.b64decode(image_b64)
+        url = f"https://api-inference.huggingface.co/models/{_AI_IMAGE_MODEL}"
+        headers = {
+            "Authorization": f"Bearer {hf_token}",
+            "Content-Type":  "application/octet-stream",
+        }
+        r = _session.post(url, headers=headers, data=image_bytes, timeout=30)
+
+        if r.status_code == 503:
+            import time; time.sleep(10)
+            r = _session.post(url, headers=headers, data=image_bytes, timeout=30)
+
+        if r.status_code != 200:
+            logger.debug("AI-image detector returned %s", r.status_code)
+            return None
+
+        result = r.json()
+        if not isinstance(result, list):
+            return None
+
+        # Model returns [{"label": "artificial", "score": float}, {"label": "human", "score": ...}]
+        ai_score = 0.0
+        human_score = 0.0
+        for item in result:
+            label = item.get("label", "").lower()
+            score = item.get("score", 0.0)
+            if "artificial" in label or "fake" in label or "generated" in label or "ai" in label:
+                ai_score = score
+            elif "human" in label or "real" in label or "authentic" in label:
+                human_score = score
+
+        is_ai = ai_score > 0.5
+        confidence = ai_score if is_ai else human_score
+
+        logger.info("AI-image detection: is_ai=%s confidence=%.2f", is_ai, confidence)
+
+        return {
+            "is_ai_generated": is_ai,
+            "confidence":      round(confidence, 4),
+            "ai_score":        round(ai_score, 4),
+            "human_score":     round(human_score, 4),
+            "label":           "AI_GENERATED" if is_ai else "AUTHENTIC",
+            "model":           _AI_IMAGE_MODEL,
+        }
+
+    except Exception as e:
+        logger.debug("AI-image detection failed: %s", e)
+        return None
+
+
+def analyze_image_full_extended(claim_text: str, image_source: str) -> dict:
+    """
+    Extended full pipeline adding SerpAPI reverse search + AI-image detection.
+    Items 101, 106 completing the multimodal analysis suite.
+
+    Extends analyze_image_full() with:
+      5. SerpAPI reverse image search (item 101)
+      6. AI-generated image detection (item 106)
+    """
+    # Run base full pipeline first (Gemini + CLIP + OCR + deepfake)
+    result = analyze_image_full(claim_text, image_source)
+
+    image_b64 = None
+    image_url = None
+
+    if image_source and "base64," in image_source:
+        image_b64 = image_source.split("base64,")[1]
+    else:
+        url_match = _IMG_URL_RE.search(image_source or "")
+        if url_match:
+            image_url = url_match.group(0)
+
+    # Step 5: Reverse image search (item 101)
+    if image_url:
+        reverse = reverse_image_search(image_url)
+        result["reverse_image_search"] = reverse
+        if reverse.get("flag"):
+            result["mismatch_risk"] = max(result.get("mismatch_risk", 0.0),
+                                          reverse["reuse_risk"])
+            result["flag"] = result.get("flag") or reverse["flag"]
+
+    # Step 6: AI-generated image detection (item 106)
+    if image_b64:
+        ai_detection = detect_ai_generated_image(image_b64)
+        if ai_detection:
+            result["ai_generated"] = ai_detection
+            if ai_detection["is_ai_generated"] and ai_detection["confidence"] > 0.75:
+                result["mismatch_risk"] = max(result.get("mismatch_risk", 0.0), 0.8)
+                result["flag"] = result.get("flag") or "ai_generated_image"
+                logger.warning("AI-generated image detected: confidence=%.2f",
+                               ai_detection["confidence"])
+
+    return result

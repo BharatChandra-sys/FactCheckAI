@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 Cache Management Routes
 
@@ -11,6 +11,7 @@ Endpoints for cache statistics and management.
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
 import logging
+import os
 
 from app.cache import cache, invalidate_model_cache, invalidate_claim_cache
 from app.auth import get_current_user
@@ -20,28 +21,27 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/cache", tags=["cache"])
 
+# Admin emails from env â€” comma-separated
+_ADMIN_EMAILS = {e.strip().lower() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()}
+
+
+def _require_admin(user: User = Depends(get_current_user)) -> User:
+    """Allow only admin emails to call destructive cache operations."""
+    if _ADMIN_EMAILS and user.email.lower() not in _ADMIN_EMAILS:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
 
 @router.get("/stats")
-async def get_cache_stats() -> Dict[str, Any]:
-    """
-    Get cache statistics.
-    
-    Returns:
-    - enabled: Whether caching is enabled
-    - connected: Whether Redis is connected
-    - hits: Number of cache hits
-    - misses: Number of cache misses
-    - hit_rate: Cache hit rate (0-1)
-    - keys: Number of keys in cache
-    - memory_used: Memory used by cache
-    """
+async def get_cache_stats(user: User = Depends(get_current_user)) -> Dict[str, Any]:
+    """Get cache statistics. Requires authentication."""
     return cache.get_stats()
 
 
 @router.post("/invalidate/model/{model_version}")
 async def invalidate_model(
     model_version: str,
-    user: User = Depends(get_current_user)
+    user: User = Depends(_require_admin)
 ):
     """
     Invalidate all caches for a specific model version.
@@ -66,7 +66,7 @@ async def invalidate_model(
 @router.post("/invalidate/claim")
 async def invalidate_claim(
     claim_text: str,
-    user: User = Depends(get_current_user)
+    user: User = Depends(_require_admin)
 ):
     """
     Invalidate cache for a specific claim.
@@ -89,7 +89,7 @@ async def invalidate_claim(
 
 
 @router.delete("/clear")
-async def clear_cache(user: User = Depends(get_current_user)):
+async def clear_cache(user: User = Depends(_require_admin)):
     """
     Clear all cache entries.
     

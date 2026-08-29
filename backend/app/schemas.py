@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 import re
@@ -41,7 +41,11 @@ class MessageRequest(BaseModel):
         if v.startswith(("http://", "https://")):
             return v[:500]
         if v.startswith("data:image/") and ";base64," in v:
-            return v[:400000]
+            if len(v) > 400_000:
+                raise ValueError(
+                    "Inline image too large (max ~300KB). Resize the image or provide a URL instead."
+                )
+            return v
         raise ValueError("image_url must be a valid http/https URL or data:image/* base64 payload")
 
 class MessageResponse(BaseModel):

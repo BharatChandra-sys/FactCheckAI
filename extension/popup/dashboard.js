@@ -1,7 +1,7 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 // API is defined in config.js
 let token = null;
 
@@ -67,23 +67,10 @@ async function loadSessions() {
       });
     }
 
-    // Count real/fake from last 5 sessions
-    let real = 0, fake = 0;
-    await Promise.allSettled(sessions.slice(0, 5).map(async s => {
-      const mr = await apiFetch(`/history/sessions/${s.id}/messages`, {
-        headers: buildHeaders({ Authorization: `Bearer ${token}` })
-      });
-      if (!mr.ok) return;
-      const msgs = await readJsonSafe(mr) || [];
-      msgs.forEach(m => {
-        if (m.is_claim) {
-          if (m.verdict === "real") real++;
-          else if (m.verdict === "fake") fake++;
-        }
-      });
-    }));
-    document.getElementById("stat-real").textContent = real;
-    document.getElementById("stat-fake").textContent = fake;
+    // Use verdict_dist from /stats/system (loaded in loadSystemStats)
+    // to avoid N+1 session message fetches — see loadSystemStats below
+    document.getElementById("stat-real").textContent = "…";
+    document.getElementById("stat-fake").textContent = "…";
 
   } catch(e) {
     list.innerHTML = `
@@ -123,6 +110,11 @@ async function loadSystemStats() {
                           : mv.robustness_score >= 0.60 ? "var(--warn)" : "var(--fake)";
       }
     }
+
+    // Populate real/fake stat counters from verdict_dist (avoids 5 session message round-trips)
+    const vd = data.verdict_dist || {};
+    document.getElementById("stat-real").textContent = vd.real ?? 0;
+    document.getElementById("stat-fake").textContent = vd.fake ?? 0;
 
     // Drift
     const drift = data.drift || {};

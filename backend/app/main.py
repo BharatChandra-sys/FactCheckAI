@@ -218,6 +218,19 @@ async def lifespan(app: FastAPI):
                             logger.info("Background data collection triggered: %s", result.get("reason"))
                     except Exception as e:
                         logger.debug("Collection scheduler error: %s", e)
+
+                    # Update Prometheus metrics on the same 1h cycle
+                    try:
+                        from app.monitoring import update_review_queue_metrics, update_model_accuracy_metrics
+                        _db = SessionLocal()
+                        try:
+                            update_review_queue_metrics(_db)
+                            update_model_accuracy_metrics(_db)
+                        finally:
+                            _db.close()
+                    except Exception as e:
+                        logger.debug("Prometheus metric update error: %s", e)
+
                     last_collection_check = now
 
                 _time.sleep(840)  # 14 minutes — just under Render's 15-min sleep threshold

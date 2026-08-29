@@ -1,12 +1,12 @@
-// Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
+﻿// Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI - https://github.com/BharatChandra-sys/fake-news-extension
+// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 (() => {
   let tooltip = null;
   let hideTimer = null;
 
-  // Create tooltip element once
+  // ── Create tooltip element once ───────────────────────────
   function createTooltip() {
     const el = document.createElement("div");
     el.id = "__factcheck_tooltip__";
@@ -83,7 +83,7 @@
     hideTimer = setTimeout(removeTooltip, delay);
   }
 
-  // Listen for mouseup to detect selection
+  // ── Listen for mouseup to detect selection ────────────────
   document.addEventListener("mouseup", e => {
     // Small delay so selection is finalised
     setTimeout(() => {

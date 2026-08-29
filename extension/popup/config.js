@@ -1,11 +1,11 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 // ── Backend API URL ───────────────────────────────────────────
 // Switch between local dev and production by toggling these two lines:
-// const API = "http://localhost:8000";           // Local dev
-const API = "https://fake-news-analyzer-j6ka.onrender.com";  // Production (Render/Railway)
+const API = "http://localhost:8000";           // Local dev
+// const API = "https://fake-news-analyzer-j6ka.onrender.com";  // Production (Render/Railway)
 
 const API_TIMEOUT_MS = 20000;
 const CLIENT_NAME = "edge-extension";

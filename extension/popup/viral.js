@@ -1,7 +1,7 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 // Viral Spread Monitor
 // config.js is loaded before this file and provides: API, apiFetch, buildHeaders, readJsonSafe
 
@@ -173,10 +173,27 @@ function renderChart(topViral) {
 // ── Init ──────────────────────────────────────────────────────
 loadViralData();
 
-// Auto-refresh every 30 seconds
-refreshTimer = setInterval(loadViralData, 30000);
+// Auto-refresh every 30 seconds — only when the page is visible
+function startPolling() {
+  if (refreshTimer) return;
+  refreshTimer = setInterval(() => {
+    if (document.visibilityState === "visible") loadViralData();
+  }, 30000);
+}
+
+function stopPolling() {
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+}
+
+startPolling();
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    loadViralData();   // immediate refresh on tab focus
+    startPolling();
+  } else {
+    stopPolling();
+  }
+});
 
 // Clean up on page unload
-window.addEventListener("unload", () => {
-  if (refreshTimer) clearInterval(refreshTimer);
-});
+window.addEventListener("unload", stopPolling);

@@ -1,7 +1,7 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+// Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 // API is defined in config.js (loaded before this script)
 
 let token = null;
@@ -1113,9 +1113,13 @@ document.getElementById("file-txt").addEventListener("change", e => {
   };
   reader.readAsText(file);
 });
+let _sending = false;  // guard against duplicate in-flight requests
+
 async function send() {
+  if (_sending) return;                    // prevent duplicate requests
   const text = inputText.value.trim();
   if (!text && !attachedImageUrl && !attachedFileData) return;
+  _sending = true;
   inputText.value = "";
   autoResize();
 
@@ -1216,6 +1220,7 @@ async function send() {
     addChatReply(`Connection error: ${err.message}. Make sure the backend is running.`);
   } finally {
     sendBtn.disabled = false;
+    _sending = false;
   }
 }
 

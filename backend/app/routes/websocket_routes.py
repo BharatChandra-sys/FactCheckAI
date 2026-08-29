@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 WebSocket Routes
 
@@ -14,7 +14,7 @@ from typing import Optional
 from datetime import datetime
 
 from app.websocket import manager
-from app.auth import get_current_user_ws
+from app.auth import get_current_user_ws, get_current_user
 from app.models import User
 
 logger = logging.getLogger(__name__)
