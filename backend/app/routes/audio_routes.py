@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 Audio routes for voice-based fact-checking
 """
@@ -164,41 +164,32 @@ async def verify_audio_claim(
             language=language,
             service="auto"
         )
-        
+
         text = transcription["text"]
-        
         if not text or len(text.strip()) < 10:
-            raise HTTPException(
-                status_code=400,
-                detail="Transcription too short or empty"
-            )
-        
-        # Now fact-check the transcribed text
+            raise HTTPException(status_code=400, detail="Transcription too short or empty")
+
+        # Fact-check in thread pool â€” verify_message is sync and blocks the event loop
+        import asyncio
+        from functools import partial
         from app.api import message as verify_message
         from app.schemas import MessageRequest
-        
-        # Create request
-        request = MessageRequest(
-            message=text,
-            history=[],
-            session_id=None,
-            image_url=None
+
+        req = MessageRequest(message=text, history=[], session_id=None, image_url=None)
+        loop = asyncio.get_event_loop()
+        verification_result = await loop.run_in_executor(
+            None, partial(verify_message, req, db, user)
         )
-        
-        # Get verification result
-        verification_result = verify_message(request, db, user)
-        
-        # Add transcription info
+
         verification_result["transcription"] = {
-            "text": text,
-            "language": transcription.get("language", language),
+            "text":       text,
+            "language":   transcription.get("language", language),
             "confidence": transcription.get("confidence", 0.0),
-            "service": transcription.get("service", "unknown"),
-            "duration": transcription.get("duration", 0)
+            "service":    transcription.get("service", "unknown"),
+            "duration":   transcription.get("duration", 0),
         }
-        
-        logger.info(f"Audio claim verified: verdict={verification_result.get('verdict')}")
-        
+
+        logger.info("Audio claim verified: verdict=%s", verification_result.get("verdict"))
         return verification_result
     
     except HTTPException:

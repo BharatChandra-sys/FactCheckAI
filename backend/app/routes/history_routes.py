@@ -53,6 +53,26 @@ def delete_session(session_id: int, user: User = Depends(get_current_user), db: 
     return {"ok": True}
 
 
+@router.post("/sessions/bulk-delete")
+def bulk_delete_sessions(
+    body: dict,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete multiple sessions in a single request — replaces N individual DELETE calls."""
+    session_ids = body.get("session_ids", [])
+    if not session_ids:
+        return {"deleted": 0}
+    # Only delete sessions owned by this user
+    deleted = (
+        db.query(ChatSession)
+        .filter(ChatSession.id.in_(session_ids), ChatSession.user_id == user.id)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return {"deleted": deleted}
+
+
 @router.patch("/sessions/{session_id}/title")
 def rename_session(session_id: int, body: dict, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     session = _get_session(session_id, user.id, db)

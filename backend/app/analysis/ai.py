@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 from __future__ import annotations
 
 import os
@@ -9,14 +9,14 @@ import re
 import json
 import logging
 import requests
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FutureTimeoutError
 from typing import List, Optional, Tuple
-from dotenv import load_dotenv
-
-_env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
-load_dotenv(_env_path)
 
 logger = logging.getLogger(__name__)
+
+# Module-level thread pool â€” created once, reused for every request
+# Avoids the 20-50ms overhead of spawning/joining a pool per call
+_POOL = ThreadPoolExecutor(max_workers=5, thread_name_prefix="ai-provider")
 
 CEREBRAS_URL  = "https://api.cerebras.ai/v1/chat/completions"
 GROQ_URL      = "https://api.groq.com/openai/v1/chat/completions"
@@ -254,8 +254,9 @@ def _ensemble_vote(results: List[dict]) -> dict:
 
 def _run_all_parallel(text: str):
     """
-    Run all available providers in parallel.
-    Returns list of successful structured results with source tags.
+    Run all available providers in parallel using the module-level thread pool.
+    Each provider has a 25-second wall-clock timeout to prevent hung providers
+    from blocking the entire pipeline.
     """
     keys = _get_keys()
     providers = []
@@ -266,7 +267,7 @@ def _run_all_parallel(text: str):
         providers.append(("groq", _call_groq))
     if keys["gemini"]:
         providers.append(("gemini", _call_gemini))
-        providers.append(("gemma4", _call_gemma4))  # same key, different model
+        providers.append(("gemma4", _call_gemma4))
     if keys["minimax"]:
         providers.append(("minimax", _call_minimax))
 
@@ -276,9 +277,12 @@ def _run_all_parallel(text: str):
     successes = []
     errors = {}
 
-    with ThreadPoolExecutor(max_workers=min(len(providers), 5)) as executor:
-        futures = {executor.submit(fn, text): name for name, fn in providers}
-        for future in as_completed(futures):
+    # Submit to module-level pool (no create/destroy overhead)
+    futures = {_POOL.submit(fn, text): name for name, fn in providers}
+
+    # as_completed with 25s total wall-clock timeout
+    try:
+        for future in as_completed(futures, timeout=25):
             name = futures[future]
             try:
                 result = future.result()
@@ -286,6 +290,13 @@ def _run_all_parallel(text: str):
                 successes.append(result)
             except Exception as e:
                 errors[name] = str(e)
+    except FutureTimeoutError:
+        # Cancel any still-running futures
+        for future, name in futures.items():
+            if not future.done():
+                future.cancel()
+                errors[name] = "timeout"
+        logger.warning("AI providers timed out: %s", list(errors.keys()))
 
     return successes, errors
 

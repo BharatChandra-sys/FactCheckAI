@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 A/B Testing Routes
 
@@ -11,7 +11,7 @@ Enables experimentation with different model versions and configurations.
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc, func
+from sqlalchemy import and_, or_, desc, func, case
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 import logging
@@ -260,39 +260,45 @@ def get_assignments(
     if not active_tests:
         return []
     
-    session_key = _get_session_key(user)
-    assignments = []
-    
+    # Batch-load ALL existing assignments for these tests in one query (eliminates N+1)
+    test_ids = [t.id for t in active_tests]
+    filter_clause = (
+        ABTestAssignment.user_id == user.id
+        if user
+        else ABTestAssignment.session_key == session_key
+    )
+    existing_map: dict = {
+        a.test_id: a.variant
+        for a in db.query(ABTestAssignment.test_id, ABTestAssignment.variant)
+        .filter(ABTestAssignment.test_id.in_(test_ids))
+        .filter(filter_clause)
+        .all()
+    }
+
+    # Collect new assignments to insert in bulk
+    new_assignments = []
     for test in active_tests:
-        # Check for existing assignment
-        existing = db.query(ABTestAssignment).filter(
-            and_(
-                ABTestAssignment.test_id == test.id,
-                or_(
-                    ABTestAssignment.user_id == (user.id if user else None),
-                    ABTestAssignment.session_key == session_key
-                )
-            )
-        ).first()
-        
-        if existing:
-            variant = existing.variant
+        if test.id in existing_map:
+            variant = existing_map[test.id]
         else:
-            # Assign new variant
             variant = _assign_variant(test, session_key)
-            
-            assignment = ABTestAssignment(
+            new_assignments.append(ABTestAssignment(
                 test_id=test.id,
                 user_id=user.id if user else None,
                 session_key=session_key if not user else None,
                 variant=variant,
-            )
-            db.add(assignment)
-            db.commit()
-            
-            logger.info(f"Assigned variant '{variant}' for test '{test.name}' to {session_key}")
-        
-        # Get variant config
+            ))
+            existing_map[test.id] = variant
+            logger.info("Assigned variant '%s' for test '%s' to %s", variant, test.name, session_key)
+
+    # Single commit for all new assignments
+    if new_assignments:
+        db.add_all(new_assignments)
+        db.commit()
+
+    assignments = []
+    for test in active_tests:
+        variant = existing_map.get(test.id, "control")
         variants = json.loads(test.variants)
         variant_config = variants.get(variant, {})
         
@@ -368,34 +374,32 @@ def get_results(
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
     
-    # Get events grouped by variant
-    variants_data = {}
-    variants_list = json.loads(test.variants).keys()
-    
-    for variant in variants_list:
-        events = db.query(ABTestEvent).filter(
-            and_(
-                ABTestEvent.test_id == test_id,
-                ABTestEvent.variant == variant
-            )
-        ).all()
-        
-        # Calculate metrics
-        total_events = len(events)
-        avg_latency = sum(e.latency_ms for e in events if e.latency_ms) / max(total_events, 1)
-        avg_confidence = sum(e.confidence for e in events if e.confidence) / max(total_events, 1)
-        
-        # Accuracy (from feedback events)
-        feedback_events = [e for e in events if e.accuracy is not None]
-        avg_accuracy = sum(e.accuracy for e in feedback_events) / max(len(feedback_events), 1)
-        
-        variants_data[variant] = {
-            "total_events": total_events,
-            "avg_latency_ms": round(avg_latency, 2),
-            "avg_confidence": round(avg_confidence, 3),
-            "avg_accuracy": round(avg_accuracy, 3) if feedback_events else None,
-            "feedback_count": len(feedback_events),
+    # Single aggregated query instead of one SELECT per variant (N+1 eliminated)
+    agg_rows = db.query(
+        ABTestEvent.variant,
+        func.count(ABTestEvent.id).label("total_events"),
+        func.avg(ABTestEvent.latency_ms).label("avg_latency"),
+        func.avg(ABTestEvent.confidence).label("avg_confidence"),
+        func.avg(
+            case((ABTestEvent.accuracy.isnot(None), ABTestEvent.accuracy), else_=None)
+        ).label("avg_accuracy"),
+        func.count(
+            case((ABTestEvent.accuracy.isnot(None), ABTestEvent.id), else_=None)
+        ).label("feedback_count"),
+    ).filter(
+        ABTestEvent.test_id == test_id
+    ).group_by(ABTestEvent.variant).all()
+
+    variants_data = {
+        row.variant: {
+            "total_events":   row.total_events,
+            "avg_latency_ms": round(float(row.avg_latency or 0), 2),
+            "avg_confidence": round(float(row.avg_confidence or 0), 3),
+            "avg_accuracy":   round(float(row.avg_accuracy), 3) if row.avg_accuracy is not None else None,
+            "feedback_count": row.feedback_count,
         }
+        for row in agg_rows
+    }
     
     # Determine winner (simple: highest accuracy)
     winner = None

@@ -1,7 +1,7 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+// Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 // API is defined in config.js (loaded before this script)
 let token = null;
 let sessions = [];
@@ -105,12 +105,28 @@ async function deleteSession(id) {
 
 async function clearAll() {
   if (!confirm("Delete all chat history?")) return;
-  await Promise.allSettled(sessions.map(s =>
-    apiFetch(`/history/sessions/${s.id}`, {
-      method: "DELETE",
-      headers: buildHeaders({ Authorization: `Bearer ${token}` })
-    })
-  ));
+  // Try bulk-delete endpoint first (single request instead of N)
+  try {
+    const ids = sessions.map(s => s.id);
+    const res = await apiFetch("/history/sessions/bulk-delete", {
+      method: "POST",
+      headers: buildHeaders({ Authorization: `Bearer ${token}`, "Content-Type": "application/json" }),
+      body: JSON.stringify({ session_ids: ids }),
+    });
+    if (!res.ok) throw new Error("bulk-delete failed");
+  } catch (_) {
+    // Fallback: delete in batches of 5 to avoid hammering the backend
+    const batchSize = 5;
+    for (let i = 0; i < sessions.length; i += batchSize) {
+      const batch = sessions.slice(i, i + batchSize);
+      await Promise.allSettled(batch.map(s =>
+        apiFetch(`/history/sessions/${s.id}`, {
+          method: "DELETE",
+          headers: buildHeaders({ Authorization: `Bearer ${token}` }),
+        })
+      ));
+    }
+  }
   sessions = [];
   chrome.storage.local.remove("currentSessionId");
   render();

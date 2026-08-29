@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 """
 Unified Upload Route — PiNE AI
 
@@ -141,23 +141,140 @@ async def upload_file(
 ):
     """
     Upload an image, audio file, PDF, DOCX, or TXT for fact-checking.
-
-    - Image  → Gemini Vision describes it, then fact-checks claim+image
-    - Audio  → Whisper transcribes it, then fact-checks the transcript
-    - PDF    → Extracts text, then fact-checks the content
-    - DOCX   → Extracts text, then fact-checks the content
-    - TXT    → Reads text, then fact-checks the content
     """
-    data         = await file.read()
+    import asyncio
+    from functools import partial
+
     filename     = file.filename or "upload"
     file_type    = _detect_type(filename, file.content_type or "")
-    size_mb      = _size_mb(data)
     claim        = (claim or "").strip()
-    # Clean display name — strip extension for session title
     display_name = filename.rsplit(".", 1)[0] if "." in filename else filename
+
+    # ── Validate Content-Type BEFORE reading full file ────────
+    if file_type == "unknown":
+        raise HTTPException(400, "Unsupported file type. Upload image, audio, PDF, DOCX, or TXT.")
+
+    # Check Content-Length header before buffering entire file
+    content_length = file.headers.get("content-length") if hasattr(file, "headers") else None
+    if content_length:
+        size_mb_approx = int(content_length) / (1024 * 1024)
+        limit = MAX_IMAGE_MB if file_type == "image" else MAX_AUDIO_MB if file_type == "audio" else MAX_DOC_MB
+        if size_mb_approx > limit:
+            raise HTTPException(400, f"File too large ({size_mb_approx:.1f}MB, max {limit}MB)")
+
+    # Read file into memory (validated size above)
+    data    = await file.read()
+    size_mb = _size_mb(data)
 
     logger.info("Upload: filename=%s type=%s size=%.1fMB claim_len=%d",
                 filename, file_type, size_mb, len(claim))
+
+    # Helper: run sync verify_message in thread pool (avoids blocking event loop)
+    async def _verify(message_text: str, image_url: str = None):
+        from app.api import message as verify_message
+        from app.schemas import MessageRequest
+        req = MessageRequest(message=message_text, image_url=image_url)
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, partial(verify_message, req, db, user))
+
+    # ── IMAGE ─────────────────────────────────────────────────
+    if file_type == "image":
+        if size_mb > MAX_IMAGE_MB:
+            raise HTTPException(400, f"Image too large ({size_mb:.1f}MB, max {MAX_IMAGE_MB}MB)")
+
+        mime     = file.content_type or "image/jpeg"
+        b64      = base64.b64encode(data).decode()
+        data_uri = f"data:{mime};base64,{b64}"
+
+        if not claim:
+            from app.analysis.image_check import check_image_consistency
+            result = check_image_consistency("Describe what is shown in this image", data_uri)
+            return {
+                "file_type":   "image",
+                "filename":    file.filename,
+                "size_mb":     round(size_mb, 2),
+                "description": result.get("description", ""),
+                "message":     "Image received. Provide a claim to fact-check against this image.",
+                "image_url":   data_uri[:100] + "...",
+            }
+
+        verification = await _verify(claim, data_uri)
+        _rename_session_to_file(db, verification.get("session_id"), display_name)
+        verification["upload"] = {"file_type": "image", "filename": filename, "size_mb": round(size_mb, 2)}
+        return verification
+
+    # ── AUDIO ─────────────────────────────────────────────────
+    elif file_type == "audio":
+        if size_mb > MAX_AUDIO_MB:
+            raise HTTPException(400, f"Audio too large ({size_mb:.1f}MB, max {MAX_AUDIO_MB}MB)")
+
+        from app.analysis.audio_transcription import transcribe_audio, validate_audio_file
+        validate_audio_file(data, max_size_mb=MAX_AUDIO_MB)
+        transcription = await transcribe_audio(data, language=language, service="auto")
+        text = transcription.get("text", "").strip()
+        if not text or len(text) < 5:
+            raise HTTPException(400, "Transcription returned empty text. Check audio quality.")
+
+        verification = await _verify(text)
+        _rename_session_to_file(db, verification.get("session_id"), display_name)
+        verification["upload"] = {
+            "file_type": "audio", "filename": filename, "size_mb": round(size_mb, 2),
+            "transcript": text, "language": transcription.get("language", language),
+            "confidence": transcription.get("confidence", 0.0),
+            "service": transcription.get("service", "unknown"),
+            "duration_sec": transcription.get("duration", 0),
+        }
+        return verification
+
+    # ── PDF ───────────────────────────────────────────────────
+    elif file_type == "pdf":
+        if size_mb > MAX_DOC_MB:
+            raise HTTPException(400, f"PDF too large ({size_mb:.1f}MB, max {MAX_DOC_MB}MB)")
+        text = _extract_pdf_text(data)
+        if not text or len(text) < 20:
+            raise HTTPException(400, "Could not extract text from PDF. Is it a scanned image PDF?")
+        claim_text = (claim + " " + text[:1800]).strip() if claim else text[:2000]
+        verification = await _verify(claim_text)
+        _rename_session_to_file(db, verification.get("session_id"), display_name)
+        verification["upload"] = {
+            "file_type": "pdf", "filename": filename, "size_mb": round(size_mb, 2),
+            "extracted_chars": len(text), "text_preview": text[:200],
+        }
+        return verification
+
+    # ── DOCX ──────────────────────────────────────────────────
+    elif file_type == "docx":
+        if size_mb > MAX_DOC_MB:
+            raise HTTPException(400, f"DOCX too large ({size_mb:.1f}MB, max {MAX_DOC_MB}MB)")
+        text = _extract_docx_text(data)
+        if not text or len(text) < 20:
+            raise HTTPException(400, "Could not extract text from DOCX.")
+        claim_text = (claim + " " + text[:1800]).strip() if claim else text[:2000]
+        verification = await _verify(claim_text)
+        _rename_session_to_file(db, verification.get("session_id"), display_name)
+        verification["upload"] = {
+            "file_type": "docx", "filename": filename, "size_mb": round(size_mb, 2),
+            "extracted_chars": len(text), "text_preview": text[:200],
+        }
+        return verification
+
+    # ── TXT ───────────────────────────────────────────────────
+    elif file_type == "txt":
+        if size_mb > MAX_DOC_MB:
+            raise HTTPException(400, f"Text file too large ({size_mb:.1f}MB, max {MAX_DOC_MB}MB)")
+        text = data.decode("utf-8", errors="replace").strip()
+        if not text or len(text) < 10:
+            raise HTTPException(400, "Text file is empty.")
+        claim_text = (claim + " " + text[:1800]).strip() if claim else text[:2000]
+        verification = await _verify(claim_text)
+        _rename_session_to_file(db, verification.get("session_id"), display_name)
+        verification["upload"] = {
+            "file_type": "txt", "filename": filename, "size_mb": round(size_mb, 2),
+            "extracted_chars": len(text),
+        }
+        return verification
+
+    raise HTTPException(400, "Unsupported file type.")
 
     # ── IMAGE ─────────────────────────────────────────────────
     if file_type == "image":

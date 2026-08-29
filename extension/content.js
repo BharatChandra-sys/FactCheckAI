@@ -83,6 +83,10 @@
     hideTimer = setTimeout(removeTooltip, delay);
   }
 
+  // Debounce timer for TEXT_SELECTED messages — prevents firing on every
+  // character of a drag selection (fires once, 300ms after mouseup settles)
+  let _selectionDebounceTimer = null;
+
   // Listen for mouseup to detect selection
   document.addEventListener("mouseup", e => {
     // Small delay so selection is finalised
@@ -93,11 +97,14 @@
         clearTimeout(hideTimer);
         showTooltip(e.clientX, e.clientY);
 
-        // Also notify background (existing behaviour)
-        chrome.runtime.sendMessage({
-          type: "TEXT_SELECTED",
-          payload: selected
-        }).catch(() => {});
+        // Debounced background notification — avoids flooding service worker
+        clearTimeout(_selectionDebounceTimer);
+        _selectionDebounceTimer = setTimeout(() => {
+          chrome.runtime.sendMessage({
+            type: "TEXT_SELECTED",
+            payload: selected
+          }).catch(() => {});
+        }, 300);
       } else {
         scheduleHide(100);
       }
