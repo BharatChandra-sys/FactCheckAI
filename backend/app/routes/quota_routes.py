@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 Quota Management Routes
 
@@ -15,7 +15,7 @@ import logging
 from datetime import datetime, timedelta
 
 from database import get_db
-from app.models import User, ClaimRecord, ChatMessage, ChatSession
+from app.models import User, ClaimRecord
 from app.auth import get_current_user
 from app.rate_limit import rate_limiter, TIER_LIMITS
 from sqlalchemy import func
@@ -47,25 +47,15 @@ async def get_usage(
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
     
-    # Count claims via ChatMessage (ClaimRecord has no user_id column)
-    # A "claim" = assistant message with is_claim=True in any session owned by this user
-    claims_this_month = db.query(func.count(ChatMessage.id)).join(
-        ChatSession, ChatMessage.session_id == ChatSession.id
-    ).filter(
-        ChatSession.user_id == user.id,
-        ChatMessage.is_claim == True,
-        ChatMessage.role == "assistant",
-        ChatMessage.created_at >= month_start,
-        ChatMessage.created_at <= month_end
+    # Count claims this month via ClaimRecord.user_id (added in enterprise migration)
+    claims_this_month = db.query(func.count(ClaimRecord.id)).filter(
+        ClaimRecord.user_id == user.id,
+        ClaimRecord.created_at >= month_start,
+        ClaimRecord.created_at <= month_end,
     ).scalar() or 0
 
-    # Get total usage (all time)
-    total_claims = db.query(func.count(ChatMessage.id)).join(
-        ChatSession, ChatMessage.session_id == ChatSession.id
-    ).filter(
-        ChatSession.user_id == user.id,
-        ChatMessage.is_claim == True,
-        ChatMessage.role == "assistant",
+    total_claims = db.query(func.count(ClaimRecord.id)).filter(
+        ClaimRecord.user_id == user.id,
     ).scalar() or 0
     
     # Calculate quota info
@@ -175,23 +165,18 @@ async def get_usage_history(
     """
     from sqlalchemy import func, cast, Date
 
-    # Count claims via ChatMessage (ClaimRecord has no user_id column)
     cutoff_date = datetime.utcnow() - timedelta(days=days)
 
     results = db.query(
-        cast(ChatMessage.created_at, Date).label("date"),
-        func.count(ChatMessage.id).label("count")
-    ).join(
-        ChatSession, ChatMessage.session_id == ChatSession.id
+        cast(ClaimRecord.created_at, Date).label("date"),
+        func.count(ClaimRecord.id).label("count")
     ).filter(
-        ChatSession.user_id == user.id,
-        ChatMessage.is_claim == True,
-        ChatMessage.role == "assistant",
-        ChatMessage.created_at >= cutoff_date
+        ClaimRecord.user_id == user.id,
+        ClaimRecord.created_at >= cutoff_date,
     ).group_by(
-        cast(ChatMessage.created_at, Date)
+        cast(ClaimRecord.created_at, Date)
     ).order_by(
-        cast(ChatMessage.created_at, Date)
+        cast(ClaimRecord.created_at, Date)
     ).all()
     
     # Format results

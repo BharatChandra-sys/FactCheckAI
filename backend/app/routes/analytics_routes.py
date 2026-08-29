@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 """
 Advanced Analytics & Insights Routes
 
@@ -288,55 +288,56 @@ async def get_leaderboard(
     limit: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
-    """
-    Get contribution leaderboard.
-    
-    Ranks users by number of reviews and quality score.
-    """
+    """Contribution leaderboard ranked by reviews and quality score."""
     cutoff = datetime.utcnow() - timedelta(days=days)
-    
-    # Get users with feedback counts
+
     user_stats = db.query(
         User.id,
         User.name,
-        User.email,
         func.count(UserFeedback.id).label("review_count")
     ).join(
-        UserFeedback,
-        User.id == UserFeedback.user_id
+        UserFeedback, User.id == UserFeedback.user_id
     ).filter(
         UserFeedback.created_at >= cutoff
     ).group_by(
-        User.id, User.name, User.email
+        User.id, User.name
     ).order_by(
         desc("review_count")
     ).limit(limit).all()
-    
+
+    if not user_stats:
+        return {"period_days": days, "leaderboard": []}
+
+    # Batch-load all feedback for these users — one query (eliminates N+1)
+    user_ids = [u.id for u in user_stats]
+    all_feedback = db.query(
+        UserFeedback.user_id,
+        UserFeedback.predicted,
+        UserFeedback.actual,
+    ).filter(
+        UserFeedback.user_id.in_(user_ids),
+        UserFeedback.created_at >= cutoff,
+    ).all()
+
+    from collections import defaultdict
+    fb_by_user: dict = defaultdict(list)
+    for fb in all_feedback:
+        fb_by_user[fb.user_id].append(fb)
+
     leaderboard = []
     for rank, user in enumerate(user_stats, 1):
-        # Calculate quality score for this user
-        feedbacks = db.query(UserFeedback).filter(
-            and_(
-                UserFeedback.user_id == user.id,
-                UserFeedback.created_at >= cutoff
-            )
-        ).all()
-        
+        feedbacks = fb_by_user[user.id]
         corrections = sum(1 for f in feedbacks if f.predicted != f.actual)
         quality_score = 1.0 - (corrections / len(feedbacks)) if feedbacks else 0.0
-        
         leaderboard.append({
-            "rank": rank,
-            "name": user.name or "Anonymous",
-            "reviews": user.review_count,
+            "rank":          rank,
+            "name":          user.name or "Anonymous",
+            "reviews":       user.review_count,
             "quality_score": round(quality_score, 3),
-            "points": int(user.review_count * quality_score * 100)  # Gamification score
+            "points":        int(user.review_count * quality_score * 100),
         })
-    
-    return {
-        "period_days": days,
-        "leaderboard": leaderboard
-    }
+
+    return {"period_days": days, "leaderboard": leaderboard}
 
 
 # ── Model Performance Analytics ───────────────────────────────

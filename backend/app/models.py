@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from database import Base
@@ -93,17 +93,22 @@ class ClaimRecord(Base):
     __tablename__ = "claim_records"
 
     id             = Column(Integer, primary_key=True, index=True)
-    claim_hash     = Column(String(64), nullable=False)
+    user_id        = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    claim_hash     = Column(String(64), nullable=False, index=True)
     claim_text     = Column(Text, nullable=False)
-    verdict        = Column(String, nullable=False)
+    verdict        = Column(String, nullable=False, index=True)
     confidence     = Column(Float, nullable=True)
     ml_score       = Column(Float, nullable=True)
     ai_score       = Column(Float, nullable=True)
     evidence_score = Column(Float, nullable=True)
+    pub_date       = Column(DateTime, nullable=True, index=True)
     created_at     = Column(DateTime, default=datetime.utcnow, index=True)
 
     __table_args__ = (
+        # Composite indexes for the most common query patterns
         Index("ix_claim_records_hash_created", "claim_hash", "created_at"),
+        Index("ix_claim_records_user_created", "user_id", "created_at"),
+        Index("ix_claim_records_verdict_created", "verdict", "created_at"),
     )
 
 
@@ -128,6 +133,8 @@ class VelocityRecord(Base):
     campaign_score    = Column(Float, nullable=True)
     is_coordinated    = Column(Boolean, default=False, index=True)
     created_at        = Column(DateTime, default=datetime.utcnow, index=True)
+    # Alias so viral_routes.py can use .timestamp without breaking
+    timestamp         = Column(DateTime, default=datetime.utcnow, index=True)
 
     __table_args__ = (
         Index("ix_velocity_records_hash_created", "claim_hash", "created_at"),

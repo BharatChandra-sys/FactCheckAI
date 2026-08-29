@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 Redis Cache Layer
 
@@ -101,17 +101,21 @@ class CacheManager:
             return False
     
     def delete_pattern(self, pattern: str) -> int:
-        """Delete all keys matching pattern"""
+        """Delete all keys matching pattern using SCAN (non-blocking, production-safe)."""
         if not self.is_available():
             return 0
-        
         try:
-            keys = self.client.keys(pattern)
-            if keys:
-                return self.client.delete(*keys)
-            return 0
+            deleted = 0
+            cursor = 0
+            while True:
+                cursor, keys = self.client.scan(cursor, match=pattern, count=100)
+                if keys:
+                    deleted += self.client.delete(*keys)
+                if cursor == 0:
+                    break
+            return deleted
         except Exception as e:
-            logger.warning(f"Cache delete pattern failed for {pattern}: {e}")
+            logger.warning("Cache delete_pattern failed for %s: %s", pattern, e)
             return 0
     
     def increment(self, key: str, amount: int = 1) -> Optional[int]:

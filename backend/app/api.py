@@ -1,8 +1,8 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
-from fastapi import APIRouter, Depends, HTTPException
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -81,11 +81,13 @@ def clustering_stats():
 @router.post("/feedback")
 def submit_feedback(
     req: FeedbackRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     user: Optional[User] = Depends(get_current_user_optional),
 ):
     """Store user correction for future retraining."""
     from app.models import UserFeedback
+    from fastapi import BackgroundTasks
     if req.actual not in ("fake", "real"):
         raise HTTPException(status_code=400, detail="actual must be 'fake' or 'real'")
     fb = UserFeedback(
@@ -101,30 +103,59 @@ def submit_feedback(
     logger.info("Feedback: predicted=%s actual=%s conf=%.2f",
                 req.predicted, req.actual, req.confidence or 0)
 
-    # Trigger auto-retraining if threshold reached
-    try:
-        from app.analysis.continuous_learning import maybe_retrain
-        retrain_status = maybe_retrain(db)
-        if retrain_status.get("triggered"):
-            logger.info("Auto-retrain triggered: %s", retrain_status["reason"])
-    except Exception as e:
-        logger.debug("Continuous learning check failed: %s", e)
+    # Non-blocking: retrain check runs after response is returned
+    def _check_retrain():
+        from database import SessionLocal
+        _db = SessionLocal()
+        try:
+            from app.analysis.continuous_learning import maybe_retrain
+            retrain_status = maybe_retrain(_db)
+            if retrain_status.get("triggered"):
+                logger.info("Auto-retrain triggered: %s", retrain_status["reason"])
+        except Exception as e:
+            logger.debug("Continuous learning check failed: %s", e)
+        finally:
+            _db.close()
 
+    background_tasks.add_task(_check_retrain)
     return {"message": "Feedback recorded. Thank you."}
 
 
 def _run_pipeline_parallel(text: str, image_url: str = None, db=None):
-    """Run ML, AI, evidence in parallel. Image/platform only if configured."""
+    """Run ML, AI, evidence in parallel with per-component caching."""
+    from app.cache import partial_cache
+
     results = {
         "ml": None, "ai": (None, ""), "evidence": (None, [], []),
         "image": None, "platform": None, "inoculation": None,
     }
 
-    def do_ml():       return run_ml_analysis(text)
-    def do_ai():       return run_ai_analysis(text)
-    def do_evidence(): return fetch_evidence(text)
+    # ── Check component caches first ─────────────────────────
+    cached_ml  = partial_cache.get_ml_score(text)
+    cached_ai  = partial_cache.get_ai_score(text)
+    cached_ev  = partial_cache.get_evidence(text)
 
-    # Only run image check if an image was explicitly provided
+    tasks_needed = {}
+
+    def do_ml():
+        r = run_ml_analysis(text)
+        partial_cache.set_ml_score(text, r.get("fake", 0.5))
+        return r
+
+    def do_ai():
+        r = run_ai_analysis(text)
+        if r and r[0] is not None:
+            partial_cache.set_ai_score(text, r[0], r[1] or "")
+        return r
+
+    def do_evidence():
+        r = fetch_evidence(text)
+        if r:
+            partial_cache.set_evidence(text, {
+                "score": r[0], "urls": r[1], "articles": r[2]
+            })
+        return r
+
     def do_image():
         if not image_url:
             return None
@@ -134,7 +165,6 @@ def _run_pipeline_parallel(text: str, image_url: str = None, db=None):
         except Exception:
             return None
 
-    # Only run platform tracker if Google Fact Check API key is set
     def do_platform():
         if not os.getenv("GOOGLE_FACTCHECK_API_KEY"):
             return None
@@ -144,37 +174,52 @@ def _run_pipeline_parallel(text: str, image_url: str = None, db=None):
         except Exception:
             return None
 
-    # Inoculation — run in parallel with pipeline (only if manipulation signals present)
     def do_inoculation():
         try:
             manip_pre, _ = analyze_manipulation(text)
             if manip_pre > 0.2:
                 from app.analysis.cloud_models import get_inoculation
-                return get_inoculation(text[:500])  # use original text (primary_claim not yet extracted)
+                return get_inoculation(text[:500])
         except Exception:
             pass
         return None
 
-    # Cap at 4 workers (added inoculation as parallel task)
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = {
-            executor.submit(do_ml):          "ml",
-            executor.submit(do_ai):          "ai",
-            executor.submit(do_evidence):    "evidence",
-            executor.submit(do_inoculation): "inoculation",
-        }
-        # Only add image/platform if needed
-        if image_url:
-            futures[executor.submit(do_image)] = "image"
-        if os.getenv("GOOGLE_FACTCHECK_API_KEY"):
-            futures[executor.submit(do_platform)] = "platform"
+    # Apply cached results directly, only dispatch uncached tasks
+    if cached_ml is not None:
+        results["ml"] = {"fake": cached_ml}
+    else:
+        tasks_needed["ml"] = do_ml
 
-        for future in as_completed(futures):
-            key = futures[future]
-            try:
-                results[key] = future.result()
-            except Exception as e:
-                logger.warning("Pipeline step '%s' failed: %s", key, e)
+    if cached_ai is not None:
+        results["ai"] = (cached_ai.get("score"), cached_ai.get("explanation", ""))
+    else:
+        tasks_needed["ai"] = do_ai
+
+    if cached_ev is not None:
+        results["evidence"] = (
+            cached_ev.get("score"),
+            cached_ev.get("urls", []),
+            cached_ev.get("articles", []),
+        )
+    else:
+        tasks_needed["evidence"] = do_evidence
+
+    # Always run these fresh (not safe to cache)
+    tasks_needed["inoculation"] = do_inoculation
+    if image_url:
+        tasks_needed["image"] = do_image
+    if os.getenv("GOOGLE_FACTCHECK_API_KEY"):
+        tasks_needed["platform"] = do_platform
+
+    if tasks_needed:
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = {executor.submit(fn): key for key, fn in tasks_needed.items()}
+            for future in as_completed(futures):
+                key = futures[future]
+                try:
+                    results[key] = future.result()
+                except Exception as e:
+                    logger.warning("Pipeline step '%s' failed: %s", key, e)
 
     return results
 
@@ -512,6 +557,7 @@ def message(
             ml_score=ml_result["fake"],
             ai_score=ai_score,
             evidence_score=evidence_score,
+            user_id=user.id if user else None,
         ))
         
         # Store velocity record if tracking was successful

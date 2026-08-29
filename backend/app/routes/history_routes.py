@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 import json
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -64,10 +64,25 @@ def rename_session(session_id: int, body: dict, user: User = Depends(get_current
 # ── Messages ─────────────────────────────────────────────────
 
 @router.get("/sessions/{session_id}/messages")
-def get_messages(session_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_messages(
+    session_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    limit: int = 100,
+    offset: int = 0,
+):
     _get_session(session_id, user.id, db)
-    msgs = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(ChatMessage.created_at).all()
-    return [_msg_dict(m) for m in msgs]
+    limit = min(limit, 200)
+    msgs = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id == session_id)
+        .order_by(ChatMessage.created_at)
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    total = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).count()
+    return {"messages": [_msg_dict(m) for m in msgs], "total": total, "limit": limit, "offset": offset}
 
 
 # ── Internal helper used by message route ────────────────────

@@ -1,8 +1,9 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 import os
+import asyncio
 import logging
 import json
 import math
@@ -210,16 +211,13 @@ async def lifespan(app: FastAPI):
 
                 # ── Data collection (every hour) ──────────────────
                 if now - last_collection_check >= 3600:
-                    db = SessionLocal()
                     try:
                         from app.analysis.continuous_learning import maybe_collect_data
-                        result = maybe_collect_data(db)
+                        result = maybe_collect_data(SessionLocal)
                         if result.get("triggered"):
                             logger.info("Background data collection triggered: %s", result.get("reason"))
                     except Exception as e:
                         logger.debug("Collection scheduler error: %s", e)
-                    finally:
-                        db.close()
                     last_collection_check = now
 
                 _time.sleep(840)  # 14 minutes — just under Render's 15-min sleep threshold

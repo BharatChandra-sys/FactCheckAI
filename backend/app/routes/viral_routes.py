@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 """
 Viral Spread Detection Routes
 
@@ -65,70 +65,73 @@ def get_viral_dashboard(db: Session = Depends(get_db)):
         
         risk_dist_dict = {level: count for level, count in risk_distribution}
         
-        # Hourly spread pattern (last 24h)
-        hourly_pattern = []
-        for hour_offset in range(24):
-            hour_start = datetime.utcnow() - timedelta(hours=hour_offset+1)
-            hour_end = datetime.utcnow() - timedelta(hours=hour_offset)
-            
-            hour_count = db.query(func.count(VelocityRecord.id)).filter(
-                VelocityRecord.timestamp >= hour_start,
-                VelocityRecord.timestamp < hour_end
-            ).scalar()
-            
-            viral_count = db.query(func.count(VelocityRecord.id)).filter(
-                VelocityRecord.timestamp >= hour_start,
-                VelocityRecord.timestamp < hour_end,
-                VelocityRecord.is_viral == True
-            ).scalar()
-            
-            hourly_pattern.append({
-                'hour': hour_start.strftime('%H:00'),
-                'total_claims': hour_count,
-                'viral_claims': viral_count
-            })
+        # Hourly spread pattern — single aggregated query instead of 24 individual ones
+        from sqlalchemy import case
+        hourly_rows = db.query(
+            func.strftime('%H', VelocityRecord.timestamp).label("hour"),
+            func.count(VelocityRecord.id).label("total_claims"),
+            func.sum(case((VelocityRecord.is_viral == True, 1), else_=0)).label("viral_claims"),
+        ).filter(
+            VelocityRecord.timestamp >= cutoff_time
+        ).group_by(
+            func.strftime('%H', VelocityRecord.timestamp)
+        ).order_by(
+            func.strftime('%H', VelocityRecord.timestamp)
+        ).all()
+
+        hourly_pattern = [
+            {
+                "hour": f"{row.hour}:00",
+                "total_claims": row.total_claims,
+                "viral_claims": row.viral_claims or 0,
+            }
+            for row in hourly_rows
+        ]
         
-        hourly_pattern.reverse()  # Oldest to newest
-        
+        # Batch-load claim records to avoid N+1 queries
+        all_hashes = (
+            [r.claim_hash for r in viral_claims_db] +
+            [r.claim_hash for r in trending_claims_db]
+        )
+        claim_map = {
+            c.claim_hash: c
+            for c in db.query(ClaimRecord)
+            .filter(ClaimRecord.claim_hash.in_(all_hashes))
+            .all()
+        } if all_hashes else {}
+
         # Format viral claims
-        viral_claims_formatted = []
-        for record in viral_claims_db:
-            # Get claim details
-            claim = db.query(ClaimRecord).filter(
-                ClaimRecord.claim_hash == record.claim_hash
-            ).first()
-            
-            viral_claims_formatted.append({
-                'claim_hash': record.claim_hash,
-                'claim_text': record.claim_text,
+        viral_claims_formatted = [
+            {
+                'claim_hash':    record.claim_hash,
+                'claim_text':    record.claim_text,
                 'velocity_score': record.velocity_score,
-                'count_5min': record.count_5min,
-                'count_1hr': record.count_1hr,
-                'count_24hr': record.count_24hr,
+                'count_5min':    record.count_5min,
+                'count_1hr':     record.count_1hr,
+                'count_24hr':    record.count_24hr,
                 'cooldown_level': record.cooldown_level,
                 'cooldown_score': record.cooldown_score,
                 'is_coordinated': record.is_coordinated,
-                'cluster_size': record.cluster_size,
-                'verdict': claim.verdict if claim else None,
-                'timestamp': record.timestamp.isoformat()
-            })
-        
+                'cluster_size':  record.cluster_size,
+                'verdict':       claim_map[record.claim_hash].verdict if record.claim_hash in claim_map else None,
+                'timestamp':     record.timestamp.isoformat(),
+            }
+            for record in viral_claims_db
+        ]
+
         # Format trending claims
-        trending_claims_formatted = []
-        for record in trending_claims_db:
-            claim = db.query(ClaimRecord).filter(
-                ClaimRecord.claim_hash == record.claim_hash
-            ).first()
-            
-            trending_claims_formatted.append({
-                'claim_hash': record.claim_hash,
-                'claim_text': record.claim_text,
-                'count_1hr': record.count_1hr,
-                'count_24hr': record.count_24hr,
+        trending_claims_formatted = [
+            {
+                'claim_hash':    record.claim_hash,
+                'claim_text':    record.claim_text,
+                'count_1hr':     record.count_1hr,
+                'count_24hr':    record.count_24hr,
                 'velocity_score': record.velocity_score,
-                'verdict': claim.verdict if claim else None,
-                'timestamp': record.timestamp.isoformat()
-            })
+                'verdict':       claim_map[record.claim_hash].verdict if record.claim_hash in claim_map else None,
+                'timestamp':     record.timestamp.isoformat(),
+            }
+            for record in trending_claims_db
+        ]
         
         return {
             'success': True,
@@ -225,25 +228,31 @@ def get_viral_alerts(
             VelocityRecord.cooldown_level.in_(['VIRAL_PANIC', 'HIGH_CONCERN'])
         ).order_by(desc(VelocityRecord.timestamp)).limit(limit).all()
         
-        alerts_formatted = []
-        for alert in alerts:
-            claim = db.query(ClaimRecord).filter(
-                ClaimRecord.claim_hash == alert.claim_hash
-            ).first()
-            
-            alerts_formatted.append({
-                'id': alert.id,
-                'claim_text': alert.claim_text,
+        # Batch-load claim records — one query instead of N
+        alert_hashes = [a.claim_hash for a in alerts]
+        claim_map = {
+            c.claim_hash: c
+            for c in db.query(ClaimRecord)
+            .filter(ClaimRecord.claim_hash.in_(alert_hashes))
+            .all()
+        } if alert_hashes else {}
+
+        alerts_formatted = [
+            {
+                'id':            alert.id,
+                'claim_text':    alert.claim_text,
                 'velocity_score': alert.velocity_score,
                 'cooldown_level': alert.cooldown_level,
                 'cooldown_score': alert.cooldown_score,
-                'is_viral': alert.is_viral,
+                'is_viral':      alert.is_viral,
                 'is_coordinated': alert.is_coordinated,
-                'count_5min': alert.count_5min,
-                'count_1hr': alert.count_1hr,
-                'verdict': claim.verdict if claim else None,
-                'timestamp': alert.timestamp.isoformat()
-            })
+                'count_5min':    alert.count_5min,
+                'count_1hr':     alert.count_1hr,
+                'verdict':       claim_map[alert.claim_hash].verdict if alert.claim_hash in claim_map else None,
+                'timestamp':     alert.timestamp.isoformat(),
+            }
+            for alert in alerts
+        ]
         
         return {
             'success': True,

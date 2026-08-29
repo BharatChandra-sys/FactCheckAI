@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 """
 Review Queue Routes — PiNE AI
 
@@ -86,7 +86,7 @@ def get_review_queue(
     - uncertain   — model confidence 0.45–0.55
     - all         — all of the above
     """
-    # Base query — all claims
+    # Base query
     query = db.query(ClaimRecord)
 
     if priority == "uncertain":
@@ -105,7 +105,7 @@ def get_review_queue(
         query = query.join(
             VelocityRecord, ClaimRecord.claim_hash == VelocityRecord.claim_hash
         ).filter(VelocityRecord.is_coordinated == True)
-    else:  # all — uncertain OR viral/trending/coordinated
+    else:
         query = query.filter(
             or_(
                 and_(ClaimRecord.confidence >= 0.45, ClaimRecord.confidence <= 0.55),
@@ -120,32 +120,38 @@ def get_review_queue(
                 )
             )
         )
-    
-    # Order by most recent first
+
     query = query.order_by(desc(ClaimRecord.created_at))
-    
-    # Get total count before pagination
     total = query.count()
-    
-    # Apply pagination
     claims = query.offset(offset).limit(limit).all()
-    
-    # Enrich with velocity data and check review status
+
+    if not claims:
+        return []
+
+    # Batch-load velocity records — one query for all claims (eliminates N+1)
+    claim_hashes = [c.claim_hash for c in claims]
+    velocity_map: dict = {}
+    for v in (
+        db.query(VelocityRecord)
+        .filter(VelocityRecord.claim_hash.in_(claim_hashes))
+        .order_by(desc(VelocityRecord.created_at))
+        .all()
+    ):
+        if v.claim_hash not in velocity_map:
+            velocity_map[v.claim_hash] = v
+
+    # Batch-load already-reviewed set — one query (eliminates N+1)
+    reviewed_texts = {
+        fb.claim_text
+        for fb in db.query(UserFeedback.claim_text).filter(
+            UserFeedback.user_id == user.id,
+            UserFeedback.claim_text.in_([c.claim_text for c in claims]),
+        ).all()
+    }
+
     result = []
     for claim in claims:
-        # Get velocity data if exists
-        velocity = db.query(VelocityRecord).filter(
-            VelocityRecord.claim_hash == claim.claim_hash
-        ).order_by(desc(VelocityRecord.created_at)).first()
-        
-        # Check if already reviewed by this user
-        already_reviewed = db.query(UserFeedback).filter(
-            and_(
-                UserFeedback.user_id == user.id,
-                UserFeedback.claim_text == claim.claim_text
-            )
-        ).first() is not None
-        
+        velocity = velocity_map.get(claim.claim_hash)
         result.append(ReviewQueueItem(
             id=claim.id,
             claim_text=claim.claim_text,
@@ -159,10 +165,10 @@ def get_review_queue(
             is_viral=velocity.is_viral if velocity else None,
             is_trending=velocity.is_trending if velocity else None,
             cluster_size=velocity.cluster_size if velocity else None,
-            already_reviewed=already_reviewed,
+            already_reviewed=claim.claim_text in reviewed_texts,
         ))
-    
-    logger.info(f"Review queue: {len(result)} items (total: {total}, priority: {priority})")
+
+    logger.info("Review queue: %d items (total: %d, priority: %s)", len(result), total, priority)
     return result
 
 
@@ -253,7 +259,9 @@ def _notify_review_update():
     import asyncio
     try:
         from app.websocket import notify_review_queue_update
-        await notify_review_queue_update("all")
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(notify_review_queue_update("all"))
+        loop.close()
     except Exception as e:
         logger.debug("WebSocket notify failed: %s", e)
 
