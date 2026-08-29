@@ -7,13 +7,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/BharatChandra-sys/fake-news-extension/stargazers">
-    <img src="https://img.shields.io/github/stars/BharatChandra-sys/fake-news-extension?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
+  <a href="https://github.com/BharatChandra-sys/FactCheckAI/stargazers">
+    <img src="https://img.shields.io/github/stars/BharatChandra-sys/FactCheckAI?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
   </a>
   <a href="https://chromewebstore.google.com/detail/factcheckai">
     <img src="https://img.shields.io/badge/Chrome-Web%20Store-4F46E5?style=for-the-badge&logo=googlechrome&labelColor=1e1e2e" alt="Chrome Web Store"/>
   </a>
-  <a href="https://github.com/BharatChandra-sys/fake-news-extension/blob/main/LICENSE">
+  <a href="https://github.com/BharatChandra-sys/FactCheckAI/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-Apache%202.0-22c55e?style=for-the-badge&labelColor=1e1e2e" alt="License"/>
   </a>
   <a href="https://your-api.onrender.com/health">
@@ -147,7 +147,7 @@ def route_request(content: str, complexity_threshold: float = 0.5):
 
 2. **Load Unpacked (Developers)**
    ```bash
-   git clone https://github.com/BharatChandra-sys/fake-news-extension.git
+   git clone https://github.com/BharatChandra-sys/FactCheckAI.git
    cd fake-news-extension
    
    # Open Chrome → Extensions → Developer mode → Load unpacked
@@ -367,7 +367,7 @@ curl -H "Authorization: Bearer <jwt_token>" \
 
 ```bash
 # Clone repository
-git clone https://github.com/BharatChandra-sys/fake-news-extension.git
+git clone https://github.com/BharatChandra-sys/FactCheckAI.git
 cd fake-news-extension
 
 # Backend setup
@@ -523,7 +523,7 @@ If you use FactCheckAI in academic research:
   title={FactCheckAI: Automated Fake News Detection System},
   author={Bodapati Bharat Chandra},
   year={2027},
-  url={https://github.com/BharatChandra-sys/fake-news-extension},
+  url={https://github.com/BharatChandra-sys/FactCheckAI},
   version={1.0.0},
   license={Apache-2.0}
 }
@@ -535,12 +535,12 @@ If you use FactCheckAI in academic research:
   <br/>
   <b>Open-source fact-checking powered by machine learning</b>
   <br/><br/>
-  <a href="https://github.com/BharatChandra-sys/fake-news-extension/stargazers">
-    <img src="https://img.shields.io/github/stars/BharatChandra-sys/fake-news-extension?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
+  <a href="https://github.com/BharatChandra-sys/FactCheckAI/stargazers">
+    <img src="https://img.shields.io/github/stars/BharatChandra-sys/FactCheckAI?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
   </a>
   <br/><br/>
   <a href="INFRASTRUCTURE_PLAN.md">Infrastructure Guide</a> •
   <a href="https://your-api-docs.com">API Documentation</a> •
-  <a href="https://github.com/BharatChandra-sys/fake-news-extension/issues">Report Issues</a> •
+  <a href="https://github.com/BharatChandra-sys/FactCheckAI/issues">Report Issues</a> •
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
