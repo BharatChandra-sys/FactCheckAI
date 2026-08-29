@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 """
 ML Analysis — Multi-server architecture:
 
@@ -92,29 +92,28 @@ def _call_ml_server_1_sync(text: str) -> float | None:
 
 
 def _call_ml_server_2_sync(text: str) -> float | None:
-    """Call Ensemble server on HuggingFace (ML Server 2) — synchronous."""
+    """Call Ensemble server on HuggingFace Space (FastAPI mode) — synchronous."""
     if not ML_SERVER_2_URL or not ML_API_KEY:
         logger.debug("ML Server 2 not configured")
         return None
     try:
-        with httpx.Client(timeout=15.0) as client:
-            # HuggingFace Gradio API format
+        with httpx.Client(timeout=20.0) as client:
             response = client.post(
-                f"{ML_SERVER_2_URL}/api/predict",
-                json={"data": [text, ML_API_KEY]}
+                f"{ML_SERVER_2_URL}/predict",
+                json={"text": text, "use_cache": True},
+                headers={"Authorization": f"Bearer {ML_API_KEY}"},
             )
             if response.status_code == 200:
-                data = response.json()
-                # Gradio returns {"data": [result]}
-                result = data.get("data", [{}])[0]
-                if isinstance(result, dict):
-                    score = result.get("fake_probability")
-                    logger.info("ML Server 2 (Ensemble): %.3f", score)
-                    return score
+                data  = response.json()
+                score = data.get("fake_probability")
+                logger.info("ML Server 2 (HF Ensemble): %.3f in %dms sources=%s",
+                            score, data.get("inference_ms", 0), data.get("model_sources"))
+                return score
             else:
-                logger.warning("ML Server 2 returned status %d", response.status_code)
+                logger.warning("ML Server 2 returned status %d: %s",
+                               response.status_code, response.text[:100])
     except httpx.TimeoutException:
-        logger.warning("ML Server 2 timeout")
+        logger.warning("ML Server 2 timeout (HF Space may be cold-starting)")
     except Exception as e:
         logger.warning("ML Server 2 failed: %s", e)
     return None
