@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, field_validator
@@ -131,10 +131,11 @@ def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
         # Don't reveal if email exists
         return {"message": "If that email exists, a code was sent."}
 
-    # Rate limit: max 5 OTP requests per 5 minutes
+    # Rate limit: max 5 unused OTP requests per 5 minutes (only count unused to avoid blocking after success)
     window_start = datetime.utcnow() - timedelta(minutes=5)
     recent_count = db.query(PasswordResetOTP).filter(
         PasswordResetOTP.email == req.email,
+        PasswordResetOTP.used == False,
         PasswordResetOTP.created_at >= window_start,
     ).count()
     if recent_count >= 5:

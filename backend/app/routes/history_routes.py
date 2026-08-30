@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 import json
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -130,7 +131,6 @@ def save_message(db: Session, session_id: int, role: str, content: str, extra: d
             title_override = extra.get("title_override")
             session.title = (title_override or content)[:60]
         if session:
-            from datetime import datetime
             session.updated_at = datetime.utcnow()
     db.commit()
     return msg

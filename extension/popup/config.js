@@ -3,9 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 // ── Backend API URL ───────────────────────────────────────────
-// Switch between local dev and production by toggling these two lines:
-const API = "http://localhost:8000";           // Local dev
-// const API = "https://fake-news-analyzer-j6ka.onrender.com";  // Production (Render/Railway)
+// Auto-selects production vs dev based on Chrome extension context.
+// In production: packaged extension has no update_url pointing to localhost.
+// In dev: load unpacked from localhost.
+const _IS_PROD = !!(chrome?.runtime?.getManifest?.().update_url);
+const API = _IS_PROD
+  ? "https://fake-news-analyzer-j6ka.onrender.com"   // Production (Render)
+  : "http://localhost:8000";                           // Local dev
 
 const API_TIMEOUT_MS = 20000;
 const CLIENT_NAME = "edge-extension";

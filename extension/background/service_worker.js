@@ -1,7 +1,7 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 /**
  * FactCheckAI — Background Service Worker (Manifest V3)
  *
@@ -192,33 +192,27 @@ chrome.commands.onCommand.addListener(async (command) => {
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.type) {
     case "TEXT_SELECTED":
-      // Content script reports a text selection (passive — no popup)
       chrome.storage.local.set({ selectedText: message.payload || "" });
-      break;
+      return false;  // no async sendResponse needed
 
     case "OPEN_POPUP_WITH_TEXT":
-      // Any page can request the popup with specific text
       openPopupWithText(message.text || "");
-      break;
+      return false;
 
     case "PING_BACKEND":
-      // Popup can request an immediate ping (e.g. on load to check connectivity)
       pingBackend();
-      break;
+      return false;
 
     case "GET_API_BASE":
-      // Popup asks for the current API base URL
       sendResponse({ apiBase: API_BASE });
-      break;
+      return true;  // async sendResponse — keep channel open
 
     case "SET_API_BASE":
-      // Settings page updates the API base URL
       if (message.apiBase) {
         API_BASE = message.apiBase;
         chrome.storage.local.set({ apiBase: API_BASE });
       }
-      break;
+      return false;
   }
-  // Return true to keep the message channel open for async sendResponse
-  return true;
+  return false;
 });

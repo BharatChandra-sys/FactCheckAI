@@ -144,8 +144,6 @@ class ExplainResponse(BaseModel):
 
 # Update MessageResponse to include SHAP fields
 class EnhancedMessageResponse(MessageResponse):
-    """Extended MessageResponse with SHAP explainability"""
-    shap_highlights: Optional[List[dict]] = None
-    shap_summary: Optional[dict] = None  # {"top_fake_signals": [...], "top_real_signals": [...]}
-    explanation_type: Optional[str] = None  # "shap" or "heuristic"
-    attention_weights: Optional[dict] = None
+    """Extended MessageResponse with additional SHAP summary fields."""
+    shap_summary: Optional[dict] = None        # {"top_fake_signals": [...], "top_real_signals": [...]}
+    attention_weights: Optional[dict] = None   # From transformer attention layers

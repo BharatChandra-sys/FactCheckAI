@@ -13,9 +13,11 @@ Fallback: Local TF-IDF + Logistic Regression from model.joblib
           Always available, lightweight (50MB)
 """
 
+from __future__ import annotations
 import os
 import logging
 import httpx
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 

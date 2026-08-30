@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 """
 Authentication utilities
 
@@ -150,7 +150,7 @@ def get_optional_user(
         
         user = db.query(User).filter(User.id == int(user_id)).first()
         return user
-    except:
+    except Exception:
         return None
 
 
@@ -215,45 +215,58 @@ def verify_google_token(token: str) -> dict:
 
 
 def verify_google_access_token(access_token: str) -> dict:
-    """Verify a Google access token and return user info"""
+    """Verify a Google access token and return user info."""
     import requests as http_requests
-    
+
     try:
-        # Verify the access token by calling Google's tokeninfo endpoint
+        # Use params dict — never put tokens in URL strings (logged by proxies)
         response = http_requests.get(
-            f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}"
+            "https://www.googleapis.com/oauth2/v1/tokeninfo",
+            params={"access_token": access_token},
+            timeout=10,
         )
-        
+
         if response.status_code != 200:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid Google access token"
+                detail="Invalid Google access token",
             )
-        
+
         token_info = response.json()
-        
-        # Get user info from Google's userinfo endpoint
+
+        # Validate audience — ensure token was issued for OUR app
+        client_id = os.getenv("GOOGLE_CLIENT_ID")
+        if client_id and token_info.get("audience") != client_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token was not issued for this application",
+            )
+
+        # Get user info using Authorization header (not URL param)
         user_response = http_requests.get(
             "https://www.googleapis.com/oauth2/v1/userinfo",
-            headers={"Authorization": f"Bearer {access_token}"}
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10,
         )
-        
+
         if user_response.status_code != 200:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not fetch user info"
+                detail="Could not fetch user info",
             )
-        
+
         user_info = user_response.json()
-        
+
         return {
-            "email": user_info.get("email"),
-            "name": user_info.get("name", ""),
+            "email":     user_info.get("email"),
+            "name":      user_info.get("name", ""),
             "google_id": user_info.get("id"),
-            "picture": user_info.get("picture", "")
+            "picture":   user_info.get("picture", ""),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid Google access token: {str(e)}"
+            detail=f"Invalid Google access token: {str(e)}",
         )

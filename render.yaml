@@ -54,6 +54,18 @@ services:
         sync: false
       - key: HF_TOKEN
         sync: false
+      - key: MINIMAX_API_KEY
+        sync: false
+
+      # ── ML Servers (hybrid architecture) ─────────────────────
+      # ML Server 2 = HuggingFace Space with model_A + model_B ensemble
+      # URL format: https://bharat2004-factcheckai-ml-server.hf.space
+      - key: ML_SERVER_1_URL
+        sync: false
+      - key: ML_SERVER_2_URL
+        sync: false
+      - key: ML_API_KEY
+        sync: false
 
       # ── App flags ─────────────────────────────────────────────
       - key: ENVIRONMENT

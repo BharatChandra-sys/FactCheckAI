@@ -9,6 +9,7 @@ from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ from app.analysis.multilingual import normalize_claim
 from app.analysis.explainability import build_explanation
 from app.logic.decision import decide
 from app.auth import get_optional_user as get_current_user_optional
-from app.models import User, ChatSession
+from app.models import User, ChatSession, ClaimRecord, VelocityRecord
 from app.routes.history_routes import save_message
 
 router = APIRouter()
@@ -87,7 +88,6 @@ def submit_feedback(
 ):
     """Store user correction for future retraining."""
     from app.models import UserFeedback
-    from fastapi import BackgroundTasks
     if req.actual not in ("fake", "real"):
         raise HTTPException(status_code=400, detail="actual must be 'fake' or 'real'")
     fb = UserFeedback(
@@ -139,21 +139,14 @@ def _run_pipeline_parallel(text: str, image_url: str = None, db=None):
 
     def do_ml():
         r = run_ml_analysis(text)
-        partial_cache.set_ml_score(text, r.get("fake", 0.5))
         return r
 
     def do_ai():
         r = run_ai_analysis(text)
-        if r and r[0] is not None:
-            partial_cache.set_ai_score(text, r[0], r[1] or "")
         return r
 
     def do_evidence():
         r = fetch_evidence(text)
-        if r:
-            partial_cache.set_evidence(text, {
-                "score": r[0], "urls": r[1], "articles": r[2]
-            })
         return r
 
     def do_image():
@@ -466,6 +459,12 @@ def message(
                     platform_result.get("debunk_sources", []))
 
     # ── Cooldown score (viral misinformation risk) ────────────
+    # Initialize stance_summary here so it's always defined even if cooldown block fails
+    stance_summary = {"support": 0, "contradict": 0, "neutral": 0}
+    for _a in evidence_articles:
+        _s = _a.get("stance", "neutral")
+        stance_summary[_s] = stance_summary.get(_s, 0) + 1
+
     cooldown_data = None
     try:
         from app.analysis.cooldown import (
@@ -477,13 +476,9 @@ def message(
         # Calculate component scores
         fake_probability = adjusted_ml if verdict == "fake" else (1.0 - confidence)
         velocity_score = velocity_metrics.get("velocity_score", 0.0)
-        
-        # Stance summary for evidence conflict
-        stance_summary = {"support": 0, "contradict": 0, "neutral": 0}
-        for a in evidence_articles:
-            s = a.get("stance", "neutral")
-            stance_summary[s] = stance_summary.get(s, 0) + 1
-        
+
+        # stance_summary already computed above — reuse it here
+
         emotional_intensity = get_emotional_intensity_score(manip_score, manip_signals)
         evidence_conflict = get_evidence_conflict_score(evidence_score, stance_summary)
         
@@ -545,8 +540,6 @@ def message(
     record_drift(verdict, confidence)
 
     # Temporal claim tracking + velocity persistence
-    import hashlib
-    from app.models import ClaimRecord, VelocityRecord
     claim_hash = hashlib.sha256(primary_claim.lower().strip().encode()).hexdigest()
     try:
         db.add(ClaimRecord(
@@ -599,12 +592,7 @@ def message(
     ).count()
     verdict_changed = prior > 0
 
-    # Stance summary for frontend contradiction meter (already calculated above for cooldown)
-    if not 'stance_summary' in locals():
-        stance_summary = {"support": 0, "contradict": 0, "neutral": 0}
-        for a in evidence_articles:
-            s = a.get("stance", "neutral")
-            stance_summary[s] = stance_summary.get(s, 0) + 1
+    # stance_summary already computed above before cooldown block
 
     # ── Explainability report ──────────────────────────────────
     explainability = build_explanation(
@@ -665,7 +653,7 @@ def message(
         "manipulation_signals": manip_signals,
         "highlights": highlights,
         "shap_highlights": highlights if explanation_type == "shap" else None,
-        "explanation_type": explanation_type if 'explanation_type' in locals() else "heuristic",
+        "explanation_type": explanation_type,
         "sub_claims": sub_claims if len(sub_claims) > 1 else None,
         "primary_claim": primary_claim if len(sub_claims) > 1 else None,
         "verdict_changed": verdict_changed,

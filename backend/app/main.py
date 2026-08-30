@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 import os
+import sys
 import asyncio
 import logging
 import json
@@ -297,6 +298,14 @@ async def lifespan(app: FastAPI):
         logger.warning("Background scheduler failed to start: %s", e)
 
     yield
+
+    # ── Graceful shutdown ─────────────────────────────────────
+    try:
+        from app.analysis.ai import _POOL
+        _POOL.shutdown(wait=False, cancel_futures=True)
+        logger.info("AI thread pool shut down")
+    except Exception as e:
+        logger.debug("AI pool shutdown: %s", e)
 
 
 app = FastAPI(
