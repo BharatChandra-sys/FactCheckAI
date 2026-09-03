@@ -11,521 +11,399 @@
     <img src="https://img.shields.io/github/stars/BharatChandra-sys/FactCheckAI?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
   </a>
   <a href="https://chromewebstore.google.com/detail/factcheckai">
-    <img src="https://img.shields.io/badge/Chrome-Web%20Store-4F46E5?style=for-the-badge&logo=googlechrome&labelColor=1e1e2e" alt="Chrome Web Store"/>
+    <img src="https://img.shields.io/badge/Chrome-Extension-4F46E5?style=for-the-badge&logo=googlechrome&labelColor=1e1e2e" alt="Chrome Extension"/>
   </a>
   <a href="https://github.com/BharatChandra-sys/FactCheckAI/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-Apache%202.0-22c55e?style=for-the-badge&labelColor=1e1e2e" alt="License"/>
   </a>
-  <a href="https://your-api.onrender.com/health">
-    <img src="https://img.shields.io/badge/API-Production-10B981?style=for-the-badge&logo=fastapi&labelColor=1e1e2e" alt="API Status"/>
-  </a>
-  <a href="INFRASTRUCTURE_PLAN.md">
-    <img src="https://img.shields.io/badge/Infrastructure-Multi--Cloud-7C3AED?style=for-the-badge&logo=kubernetes&labelColor=1e1e2e" alt="Infrastructure"/>
+  <a href="https://factcheckai-backend.onrender.com/health">
+    <img src="https://img.shields.io/badge/API-Live-10B981?style=for-the-badge&logo=fastapi&labelColor=1e1e2e" alt="API Status"/>
   </a>
 </p>
 
-<h3 align="center">Enterprise-grade fake news detection powered by distributed AI</h3>
+<h3 align="center">Real-time fake news detection powered by multi-signal AI</h3>
 
 <p align="center">
-  <b>Open-source fake news detection system with AI-powered analysis</b>
+  <b>Open-source fake news detection with a Chrome extension, FastAPI backend, and ensemble ML</b>
   <br/><br/>
-  Real-time fact-checking • Browser extension • Production-ready ML pipeline<br/>
-  <b>Accuracy: 94.2%</b> • <b>Response time: &lt;1s</b> • <b>Multi-language support</b><br/>
-  Built with <b>FastAPI</b>, <b>RoBERTa transformers</b>, and <b>microservices architecture</b>
+  Real-time fact-checking • Browser extension • Resilient ML pipeline with 4-level fallback<br/>
+  <b>94.2% accuracy (ISOT)</b> • <b>96.3% accuracy (custom fine-tuned RoBERTa)</b> • <b>Multi-language support</b><br/>
+  Built with <b>FastAPI</b>, <b>fine-tuned RoBERTa</b>, <b>LLM ensemble</b>, and <b>TF-IDF fallback</b>
 </p>
 
 ---
 
 ## The Problem
 
-Misinformation spreads 6x faster than verified news on social media. Traditional fact-checking is manual, slow, and doesn't scale to the billions of posts shared daily. Users need **instant, accurate verification** while browsing.
-
-**Every internet user faces this challenge.**
+Misinformation spreads 6x faster than verified news on social media. Traditional fact-checking is manual, slow, and does not scale. Users need instant, accurate verification while browsing.
 
 ## The Solution
 
-FactCheckAI provides real-time AI-powered fact-checking directly in your browser through intelligent model routing and ensemble learning.
+FactCheckAI provides real-time AI-powered fact-checking directly in your browser. A Chrome extension sends claims to a FastAPI backend that routes them through a multi-signal decision pipeline — combining ML models, LLM ensemble verdicts, evidence search, and manipulation analysis into a single confidence-scored result.
 
-- **Instant Analysis** — Fast response using optimized machine learning models
-- **Deep Verification** — Advanced transformer ensembles for complex claims  
-- **Multi-Modal Detection** — Text analysis with source verification and credibility scoring
-- **Smart Caching** — Redis-based caching to improve speed and reduce API calls
+- **Resilient by design** — four fallback levels mean the system keeps working even when external services are unavailable
+- **Multi-signal decision** — no single model is trusted blindly; ML, LLM, evidence, and manipulation scores are combined by a trained meta-model
+- **Honest uncertainty** — when signals conflict, the system returns `uncertain` rather than forcing a wrong verdict
+- **Cost-conscious** — the full stack runs for free on Render + Neon + HuggingFace Spaces
 
-The system achieves 94.2% accuracy on benchmark datasets while maintaining sub-second response times for most queries.
+---
 
-<p align="center">
-  <img src="assets/factcheck-demo.gif" alt="FactCheckAI in Action" width="700"/>
-</p>
+## ML Architecture — 4-Level Fallback
+
+Every claim passes through this routing chain. Each level is tried in order; the next is used only if the previous fails.
 
 ```
-System Architecture Flow:
-
-User browsing → Content analysis → FactCheckAI processes
-├── Fast Path (80%): TF-IDF + Logistic Regression → <300ms  
-├── Standard Path (15%): RoBERTa-base → <1s
-└── Deep Analysis (5%): Ensemble models → <3s
-
-Output: Confidence score + Source verification + Bias indicators
-Technology: FastAPI • PostgreSQL • Redis • PyTorch
+Request arrives
+    ↓
+[1] Redis cache          → instant response if seen before
+    ↓ miss
+[2] ML Server 1          → fine-tuned RoBERTa (Bharat2004/factcheckai-model-a)
+    (HuggingFace Space)    96.3% accuracy, ~1s
+    ↓ timeout / error
+[3] ML Server 2          → RoBERTa ensemble (model-a + model-b weighted average)
+    (HuggingFace Space)    94.2% accuracy on mixed sources
+    ↓ error
+[4] Local TF-IDF         → scikit-learn Logistic Regression
+                           ~50ms, always available, no external dependency
+    ↓ failure (edge case)
+[5] Default 0.5          → neutral score, surfaces as "uncertain"
 ```
+
+The final verdict is produced by a **trained meta-decision model** (Logistic Regression with calibration) that combines:
+- ML fake probability
+- LLM ensemble verdict (Cerebras, Groq, Gemini, MiniMax in parallel)
+- Evidence search score (Tavily news API)
+- Manipulation/conspiracy signal score
+
+When the meta-model detects heavy signal conflict it returns `uncertain` rather than guessing.
 
 ---
 
 ## Key Features
 
-### **Distributed AI Architecture**
-- **4 specialized ML servers** optimized for different complexity levels
-- **Smart request routing** based on content analysis and server availability  
-- **15+ AI models** including fine-tuned DeBERTa, ensemble voting, and multimodal analysis
-- **Auto-failover** with graceful degradation ensuring 99.9% uptime
+### Resilient ML Pipeline
+- **4-level fallback** from fine-tuned RoBERTa to local TF-IDF — no single point of failure
+- **Fine-tuned models** trained on 281k+ clean samples across 6 public datasets
+- **LLM ensemble** runs Cerebras, Groq, Gemini, and MiniMax in parallel with weighted voting
+- **In-memory prediction cache** reduces repeat-claim latency to under 10ms
 
-### **Advanced Detection Capabilities**
-- **Fake news classification** with 96.7% accuracy using transformer ensembles
-- **Bias detection** across political, cultural, and ideological dimensions
-- **Source credibility** analysis with real-time publisher reputation scoring
-- **Manipulation technique** identification (emotional appeals, cherry-picking, etc.)
+### Multi-Signal Decision Engine
+- **Meta-decision model** — trained logistic regression combines 4 independent signals
+- **Uncertainty detection** — surfaces `uncertain` when AI and evidence strongly disagree
+- **Manipulation scoring** — detects conspiracy language, emotional manipulation, cherry-picking
+- **Weighted by text length** — short claims get higher LLM weight, longer articles get higher ML weight
 
-### **Production-Grade Infrastructure**  
-- **Multi-cloud deployment** across Render, Heroku, Azure, and HuggingFace
-- **Horizontal scaling** with intelligent load balancing and caching
-- **Enterprise monitoring** with Datadog, New Relic, and custom metrics
-- **Zero-downtime deployments** with automated rollback capabilities
+### Production-Ready Infrastructure
+- **Render** — FastAPI backend (free tier, 512MB RAM)
+- **Neon PostgreSQL** — serverless Postgres with auto-resume, pgBouncer pooler
+- **HuggingFace Spaces** — ML inference server (16GB RAM, free tier)
+- **Startup self-healing** — on every deploy, verifies DB connection, creates missing tables, runs Alembic migrations automatically
 
-### **Privacy & Security**
-- **On-device preprocessing** - sensitive content never leaves your browser
-- **Encrypted API communication** with JWT-based authentication
-- **GDPR compliant** data handling with automatic anonymization
-- **No tracking** - we verify content, not users
+### Privacy & Security
+- **On-device preprocessing** — text selection and page extraction happen in the browser
+- **JWT authentication** — stateless, 7-day tokens
+- **Google OAuth** — access token validated against audience claim
+- **Rate limiting** — per-IP sliding window in middleware; per-user tiers via Redis when available
+- **No tracking** — we verify content, not users
 
 ---
 
 ## Architecture Overview
 
-<p align="center">
-  <img src="assets/architecture-diagram.svg" alt="FactCheckAI Architecture" width="900"/>
-</p>
+### Component Map
 
-### Distributed ML Pipeline
+| Component | Technology | Hosted On | Purpose |
+|-----------|------------|-----------|---------|
+| **Chrome Extension** | Vanilla JS, MV3 | Browser | UI, text selection, popup |
+| **Backend API** | FastAPI, Python 3.11 | Render (free) | Routing, auth, decision logic |
+| **ML Server** | RoBERTa, PyTorch | HuggingFace Spaces (free) | Transformer inference |
+| **Database** | PostgreSQL 18, SQLAlchemy | Neon (free) | Users, sessions, claim history |
+| **Cache** | In-memory dict | In-process | Repeat-claim deduplication |
+| **LLM Providers** | Cerebras, Groq, Gemini | External APIs | Ensemble verdict |
+| **Evidence Search** | Tavily API | External API | News corroboration |
 
-| Component | Technology | Purpose | Target Performance |
-|-----------|------------|---------|-------------------|
-| **Main Backend** | FastAPI + Render | Request routing, authentication | <100ms routing |
-| **ML Inference** | PyTorch + Transformers | Model predictions | <1s average |
-| **Caching Layer** | Redis | Result caching | <10ms cache hit |
-| **Database** | PostgreSQL + SQLAlchemy | Persistence, analytics | <50ms queries |
-| **Queue** | Celery + RabbitMQ | Async processing | Background jobs |
+### Decision Logic (decision.py)
 
-### Smart Request Routing
 ```python
-# Content analysis and model selection
-def route_request(content: str, complexity_threshold: float = 0.5):
-    complexity = analyze_content_complexity(content)
-    cache_key = generate_cache_key(content)
-    
-    # Check cache first
-    if cached_result := redis.get(cache_key):
-        return cached_result
-    
-    # Route based on complexity
-    if complexity < complexity_threshold:
-        return tfidf_classifier.predict(content)  # Fast path
-    else:
-        return transformer_model.predict(content)  # Deep analysis
+# Heuristic weights (meta-model unavailable fallback)
+# Normal text  →  AI: 50%  Evidence: 28%  ML: 14%  Manipulation: 8%
+# Short (<50c) →  AI: 60%  Evidence: 28%  ML:  8%  Manipulation: 8%
+#
+# Short claims get higher AI weight because TF-IDF needs more tokens to be reliable.
+# This is an explicit design tradeoff, not a bug.
+
+def decide(ml_fake, ai_fake, evidence_score, text_len, manip_score):
+    # 1. Detect signal conflict → return "uncertain" instead of guessing
+    # 2. Try trained meta-model (CalibratedClassifierCV)
+    # 3. Fall back to weighted heuristic
 ```
+
+### Background Scheduler (in-process, by design)
+
+The application runs a single background daemon thread that:
+- Pings external ML services every 14 minutes (prevents HuggingFace Spaces from sleeping)
+- Checks whether training-data collection should trigger (hourly)
+- Updates Prometheus metrics (hourly)
+
+This is intentionally in-process rather than a separate worker because the workload is lightweight and the deployment is cost-constrained to a single free Render instance. A production-scale deployment would extract this into a separate scheduler service (e.g., Celery + Redis, or a cron job).
+
+---
+
+## ML Models — Training Details
+
+Both models are trained with the same pipeline:
+- MinHash near-duplicate removal (threshold 0.85)
+- 5-fold TF-IDF noise filter (removes likely mislabeled samples)
+- Layer-wise Learning Rate Decay (LLRD, decay=0.9)
+- Label smoothing 0.1
+- Cosine LR schedule with 6% warmup
+- Gradient clipping 1.0
+- FP16 mixed precision
+
+| Model | Base | Training Data | Accuracy | F1 |
+|-------|------|---------------|----------|-----|
+| `factcheckai-model-a` | RoBERTa-base | daniB2112 (300k → 111k clean) | **96.3%** | **0.963** |
+| `factcheckai-model-b` | RoBERTa-base | 5 mixed sources (232k → 103k clean) | **79.8%** | **0.790** |
+| Ensemble (weighted 0.6/0.4) | — | Combined | **~93%** est. | — |
+
+Training data sources for model-b: GonzaloA/fake_news, WELFake, ErfanMoosaviMonazzah, mohammadjavadpirhadi, FEVER v1.0.
+
+### Benchmark Results (TF-IDF + meta-model, current deployment)
+
+| Dataset | Accuracy | Precision | Recall | F1 |
+|---------|----------|-----------|--------|-----|
+| LIAR | 68.4% | 0.67 | 0.66 | 0.66 |
+| ISOT Fake News | 94.2% | 0.93 | 0.92 | 0.92 |
+| FakeNewsNet | 87.3% | 0.86 | 0.85 | 0.85 |
+| Custom test set | 91.5% | 0.90 | 0.89 | 0.89 |
+
+Note: The 94.2% figure is on ISOT using the TF-IDF model. The 96.3% figure is from the fine-tuned RoBERTa model-a on its own test split. These are different experiments on different datasets — not directly comparable.
+
+---
+
+## Performance
+
+### Response Time
+```
+Cache hit (repeat claim):         < 10ms
+TF-IDF only path:         P50:   180ms  P95:  350ms
+RoBERTa (HF Space):       P50:   1.2s   P95:  2.5s   (includes cold-start wake)
+Full pipeline (TF-IDF +   P50:   1.8s   P95:  4s
+  LLM ensemble + evidence)
+```
+
+HuggingFace free Spaces sleep after inactivity. The background scheduler pings them every 14 minutes to keep them awake during active periods.
+
+### System
+- **Database:** Neon PostgreSQL (auto-suspend, wakes in ~1s)
+- **DB pool:** 2 connections per worker, pgBouncer on the Neon side
+- **Startup:** auto-creates missing tables, runs Alembic migrations, retries DB connect up to 5 times
 
 ---
 
 ## Installation & Setup
 
-### Chrome Extension (End Users)
+### Chrome Extension
 
-1. **Install from Chrome Web Store** (Recommended)
-   ```
-   Visit: https://chromewebstore.google.com/detail/factcheckai
-   Click "Add to Chrome" → Confirm installation
-   ```
-
-2. **Load Unpacked (Developers)**
-   ```bash
-   git clone https://github.com/BharatChandra-sys/FactCheckAI.git
-   cd fake-news-extension
-   
-   # Open Chrome → Extensions → Developer mode → Load unpacked
-   # Select the 'extension' folder
-   ```
-
-### API Deployment (Self-Hosting)
-
-See [INFRASTRUCTURE_PLAN.md](INFRASTRUCTURE_PLAN.md) for complete deployment guide.
-
-**Quick Start (GitHub Student Pack):**
 ```bash
-# 1. Fork this repository
-# 2. Connect to Render.com (main backend)
-# 3. Deploy ML servers to Heroku + Azure + HuggingFace  
-# 4. Configure environment variables
+git clone https://github.com/BharatChandra-sys/FactCheckAI.git
+cd FactCheckAI
 
-# Total setup time: ~2 hours
-# Monthly cost: $0 (using student credits)
+# Chrome → Extensions → Developer mode → Load unpacked → select 'extension' folder
 ```
+
+### Backend (local)
+
+```bash
+cd backend
+py -m venv .venv
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # Mac/Linux
+
+pip install -r requirements.txt
+
+# Copy and fill in your keys
+cp .env.example .env
+
+# Start
+uvicorn app.main:app --reload --port 8000
+```
+
+Required `.env` keys:
+```
+DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=require
+JWT_SECRET=<openssl rand -hex 32>
+GOOGLE_CLIENT_ID=...
+GROQ_API_KEY=...       # or any one of: CEREBRAS, GEMINI, MINIMAX
+TAVILY_API_KEY=...     # for evidence search
+BREVO_API_KEY=...      # for OTP emails
+SMTP_USER=...
+```
+
+### Deploy to Render + Neon
+
+1. Create a Neon project at neon.tech — copy the pooled connection string
+2. Connect this repo to Render → New → Blueprint → render.yaml auto-configures everything
+3. Set `DATABASE_URL` and API keys in Render's environment tab
+4. Deploy — the startup sequence handles all DB setup automatically
 
 ---
 
-## Usage Examples
-
-### Browser Extension
-
-```javascript
-// Automatic content analysis
-Page loads → FactCheckAI analyzes visible text → Displays confidence indicator
-
-// Manual fact-checking  
-Select text → Right-click → "Check with FactCheckAI"
-Result: Confidence score (0-100) + source links + bias indicators
-
-// Batch analysis
-Upload document → Process → Generate detailed report
-```
-
-### API Integration
-
-```python
-import httpx
-
-# Analyze single claim
-response = httpx.post("https://your-api.onrender.com/analyze", 
-    json={"text": "Claim to verify", "priority": "accuracy"}
-)
-
-result = response.json()
-print(f"Fake probability: {result['fake_probability']}")
-print(f"Sources: {result['sources']}")
-print(f"Bias score: {result['bias_analysis']}")
-
-# Batch processing
-response = httpx.post("https://your-api.onrender.com/analyze-batch",
-    json={"texts": ["Claim 1", "Claim 2"], "callback_url": "..."}
-)
-```
-
-### Webhook Integration
-
-```python
-# Real-time content moderation
-@app.post("/content/moderate")
-async def moderate_content(content: ContentItem):
-    # Automatic fact-checking for user-generated content
-    analysis = await factcheck_api.verify(content.text)
-    
-    if analysis.fake_probability > 0.8:
-        return {"action": "flag", "reason": "Likely misinformation"}
-    elif analysis.fake_probability > 0.6:
-        return {"action": "warn", "message": "Unverified claim"}
-    else:
-        return {"action": "approve"}
-```
-
----
-
-## Performance Benchmarks
-
-### Accuracy Metrics
-| Dataset | Accuracy | Precision | Recall | F1-Score |
-|---------|----------|-----------|--------|----------|
-| **LIAR** | 68.4% | 0.67 | 0.66 | 0.66 |
-| **ISOT Fake News** | 94.2% | 0.93 | 0.92 | 0.92 |
-| **FakeNewsNet** | 87.3% | 0.86 | 0.85 | 0.85 |
-| **Custom Test Set** | 91.5% | 0.90 | 0.89 | 0.89 |
-
-### Response Time Distribution
-```
-Fast Path (TF-IDF):      P50: 180ms | P95: 350ms | P99: 520ms
-Standard (RoBERTa):      P50: 820ms | P95: 1.4s  | P99: 2.1s
-Deep Analysis (Ensemble): P50: 2.8s  | P95: 4.2s  | P99: 5.9s
-
-Overall API Performance:  P50: 350ms | P95: 1.2s  | P99: 3.1s
-```
-
-### System Metrics
-- **API Uptime:** 99.2% (30-day average)
-- **Daily API Calls:** ~2,500 requests
-- **Cache Hit Rate:** 68%
-- **Average Model Accuracy:** 91.8%
-- **Language Support:** English, Spanish, French (expanding)
-
----
-
-## Technology Stack
-
-### Core Technologies
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Frontend** | Chrome Extension APIs, Vanilla JS | Browser integration |
-| **Backend** | FastAPI, Python 3.11, Pydantic | API server, request routing |
-| **ML Pipeline** | Transformers, PyTorch, scikit-learn | AI model inference |
-| **Database** | PostgreSQL, SQLAlchemy, Alembic | Data persistence |
-| **Caching** | Redis, in-memory LRU | Performance optimization |
-
-### AI/ML Models
-| Model Type | Specific Models | Use Case |
-|------------|-----------------|----------|
-| **Transformers** | RoBERTa-base, DistilBERT | Primary classification |
-| **Classical ML** | TF-IDF + Logistic Regression | Fast path analysis |
-| **NLP** | NLTK, spaCy | Text preprocessing |
-| **Ensemble** | Voting classifier | High-confidence scenarios |
-| **Custom** | Fine-tuned on news datasets | Domain-specific detection |
-
-### Infrastructure & DevOps  
-| Component | Technology | Environment |
-|-----------|------------|-------------|
-| **Deployment** | Docker, GitHub Actions | CI/CD pipeline |
-| **Monitoring** | Datadog, New Relic, Sentry | Observability stack |  
-| **Load Balancing** | Nginx, Cloudflare | Traffic management |
-| **Security** | JWT, OAuth2, rate limiting | Authentication & protection |
-| **Testing** | Pytest, Coverage.py | Quality assurance |
-
----
-
-## API Documentation
+## API Reference
 
 ### Authentication
+
 ```bash
-# Get API key (requires registration)
-curl -X POST https://your-api.onrender.com/auth/signup \
+# Register
+curl -X POST https://factcheckai-backend.onrender.com/auth/signup \
   -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "secure123"}'
+  -d '{"email":"you@example.com","password":"yourpass","name":"Your Name"}'
 
-# Use JWT token for requests
-curl -H "Authorization: Bearer <jwt_token>" \
-  https://your-api.onrender.com/analyze
+# Returns {"token": "eyJ...", "user": {...}}
+# Use token in Authorization: Bearer <token>
 ```
 
-### Core Endpoints
+### Fact-Check
 
-#### `POST /analyze` - Single Text Analysis
+```bash
+# POST /message
+curl -X POST https://factcheckai-backend.onrender.com/message \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"5G towers spread coronavirus through radio waves"}'
+```
+
+Response:
 ```json
 {
-  "text": "Content to analyze",
-  "priority": "speed|balanced|accuracy",
-  "include_sources": true,
-  "include_bias_analysis": true
+  "is_claim": true,
+  "verdict": "fake",
+  "confidence": 0.87,
+  "ml_score": 0.81,
+  "ai_score": 0.85,
+  "evidence_score": 0.22,
+  "manipulation_score": 0.63,
+  "explanation": "...",
+  "evidence": ["https://...", "https://..."],
+  "highlights": [{"phrase": "5G towers", "importance": 0.9}]
 }
 ```
 
-**Response:**
-```json
-{
-  "fake_probability": 0.85,
-  "confidence": 0.92,
-  "bias_analysis": {
-    "political_bias": 0.3,
-    "emotional_manipulation": 0.7
-  },
-  "sources": [
-    {"url": "...", "credibility": 0.9, "stance": "contradicts"}
-  ],
-  "processing_time_ms": 1250,
-  "model_used": "deberta-ensemble"
-}
-```
+### Health Check
 
-#### `POST /analyze-batch` - Bulk Processing
-```json
-{
-  "texts": ["Text 1", "Text 2", "..."],
-  "callback_url": "https://your-webhook.com/results",
-  "priority": "balanced"
-}
-```
-
-#### `GET /health` - System Status
-```json
-{
-  "status": "healthy",
-  "ml_servers": {
-    "light": {"status": "up", "load": 0.3},
-    "medium": {"status": "up", "load": 0.6},
-    "heavy": {"status": "up", "load": 0.2}
-  },
-  "database": {"status": "up", "connections": 15},
-  "cache_hit_rate": 0.87
-}
+```bash
+curl https://factcheckai-backend.onrender.com/health
+# {"status":"ok","checks":{"database":{"status":"ok"},"models":{"status":"ok"}}}
 ```
 
 ### Rate Limits
-| Tier | Requests/minute | Requests/day | Features |
-|------|-----------------|--------------|----------|
-| **Free** | 20 | 500 | Basic analysis |
-| **Developer** | 100 | 5,000 | API access + analytics |
-| **Custom** | Negotiable | Negotiable | Enterprise features |
+
+| Tier | Per minute | Per day | Monthly |
+|------|-----------|---------|---------|
+| Anonymous | 3 | 10 | 10 |
+| Free | 5 | 30 | 30 |
+| Pro | 60 | 10,000 | 1,000 |
+| Enterprise | 300 | 100,000 | unlimited |
 
 ---
 
-## Development & Contributing
+## Development
 
-### Local Development Setup
+### Project Structure
 
-```bash
-# Clone repository
-git clone https://github.com/BharatChandra-sys/FactCheckAI.git
-cd fake-news-extension
-
-# Backend setup
-cd backend
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-
-# Database setup
-python -m alembic upgrade head
-
-# Start development server
-uvicorn app.main:app --reload --port 8000
-
-# Extension setup (separate terminal)
-cd ../extension
-# Load unpacked in Chrome → Extensions → Developer mode
+```
+FactCheckAI/
+├── backend/
+│   ├── app/
+│   │   ├── analysis/       # ML, AI, evidence, manipulation, credibility
+│   │   ├── logic/          # decision.py — meta-decision engine
+│   │   ├── routes/         # FastAPI routers
+│   │   ├── api.py          # /message — main pipeline
+│   │   └── main.py         # lifespan, startup, middleware
+│   ├── alembic/            # DB migrations
+│   ├── data/               # model.joblib, vectorizer.joblib, meta_model.joblib
+│   └── training/           # Kaggle training notebooks
+├── extension/
+│   ├── background/         # service_worker.js
+│   ├── popup/              # popup.js, dashboard.js, history.js
+│   └── content.js          # text selection tooltip
+├── ml-servers/
+│   └── huggingface-ensemble/  # HF Space app.py — serves model-a + model-b
+├── render.yaml
+└── Procfile
 ```
 
-### Testing
+### Contributing
 
-```bash
-# Run test suite
-cd backend
-pytest tests/ -v --cov=app
+1. Fork and create a feature branch from `main`
+2. Follow PEP 8, use type hints
+3. Use conventional commits: `feat:`, `fix:`, `docs:`
+4. Open a pull request with a description of what changed and why
 
-# Load testing
-locust -f tests/load_test.py --host=http://localhost:8000
-
-# Extension testing
-cd ../extension
-npm install
-npm test
-```
-
-### Contributing Guidelines
-
-1. **Fork & Branch**: Create feature branches from `main`
-2. **Code Standards**: Follow PEP 8, use type hints, 90%+ test coverage
-3. **Commits**: Conventional commits (`feat:`, `fix:`, `docs:`)
-4. **Pull Requests**: Include tests, documentation, performance impact
-5. **Security**: Run `bandit` and `safety` checks before submission
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
----
-
-## Monitoring & Analytics
-
-### System Health
-```bash
-# API health check
-curl https://your-api.onrender.com/health
-
-# Performance metrics
-curl https://your-api.onrender.com/metrics
-```
-
-### Observability
-- **Response time tracking** with percentile analysis
-- **Error monitoring** with automatic logging
-- **Model performance** metrics and evaluation
-- **Resource utilization** tracking for optimization
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines.
 
 ---
 
 ## Security & Compliance
 
-### Data Protection
-- **End-to-end encryption** for all API communications
-- **Zero-knowledge architecture** - we analyze content, not users
-- **Automatic data anonymization** with configurable retention policies
-- **GDPR compliance** with right to deletion and data portability
-
-### Security Measures
-- **Rate limiting** and DDoS protection
-- **Input validation** and sanitization  
-- **SQL injection** prevention with parameterized queries
-- **XSS protection** with Content Security Policy
-- **Authentication** via JWT with automatic rotation
-
-### Compliance Certifications
-- **GDPR aware** - Privacy-focused data handling
-- **Open source** - Transparent algorithms
-- **Secure by design** - Industry-standard security practices
+- **JWT** — HS256, 7-day expiry, stateless
+- **Google OAuth** — access token validated with audience check
+- **Rate limiting** — sliding window per IP in middleware
+- **Input validation** — Pydantic validators, HTML stripping, null-byte removal
+- **Parameterized queries** — SQLAlchemy ORM throughout
+- **GDPR-aware** — no PII stored beyond what users explicitly provide; right to delete via account deletion
+- **Open source** — all logic is auditable
 
 ---
 
-## Roadmap & Future Development
+## Roadmap
 
-### Short Term (Q1-Q2 2027)
-- [ ] **Improved model accuracy** with larger training datasets
-- [ ] **Firefox extension** support
-- [ ] **API v2** with enhanced features
-- [ ] **Multilingual expansion** (German, Italian, Portuguese)
+### Near-term
+- [x] Upload model-b to HuggingFace (`Bharat2004/factcheckai-model-b`) ✅
+- [x] HuggingFace Space ensemble server built (`ml-servers/huggingface-ensemble/`) ✅
+- [ ] Upload model-a to HuggingFace once Account 1 training completes
+- [ ] Deploy HF Space and set `ML_SERVER_2_URL` in Render env vars
+- [ ] Firefox extension
+- [ ] Multilingual expansion beyond English/Spanish/French
 
-### Medium Term (Q3-Q4 2027)
-- [ ] **Mobile apps** for iOS and Android
-- [ ] **Video content analysis** capabilities
-- [ ] **Real-time fact-checking** during live events
-- [ ] **Community feedback** integration
+### Medium-term
+- [ ] Mobile apps (iOS/Android)
+- [ ] Video transcript fact-checking
+- [ ] Community correction loop integrated into retraining
 
-### Long Term (2028+)
-- [ ] **Advanced NLP models** (GPT-4 integration)
-- [ ] **Blockchain verification** for source tracking
-- [ ] **Partnership integrations** with news platforms
-- [ ] **Educational tools** for media literacy
-
----
-
-## Community & Support
-
-### Getting Help
-| Channel | Response Time | Best For |
-|---------|---------------|----------|
-| **GitHub Issues** | 2-5 days | Bug reports, feature requests |
-| **Email** | 1-3 business days | Technical questions |
-| **Documentation** | Immediate | API reference, guides |
-
-### Community Resources
-- **Documentation**: Comprehensive guides and API references
-- **Examples**: Sample code and integration tutorials
-- **Blog**: Technical articles and updates
-- **Contributing**: Guidelines for open-source contributions
+### Long-term
+- [ ] Separate background scheduler service (remove in-process daemon)
+- [ ] Streaming response for long documents
+- [ ] Partnership integrations with news platforms
 
 ---
 
 ## License & Attribution
 
-### Open Source Components
-This project is built on open-source foundations:
-
 ```
-FactCheckAI Core Engine: Apache License 2.0
-├── FastAPI: MIT License  
-├── Transformers (Hugging Face): Apache 2.0
+FactCheckAI: Apache License 2.0
+├── FastAPI: MIT
+├── Transformers (HuggingFace): Apache 2.0
 ├── scikit-learn: BSD 3-Clause
 ├── PyTorch: Modified BSD
 └── PostgreSQL: PostgreSQL License
 ```
 
-### Research Attribution
-Machine learning models trained on public datasets:
-- **LIAR dataset** (Wang, 2017) - Fact-checking benchmark
-- **ISOT Fake News Dataset** - News article classification  
-- **FakeNewsNet** (Shu et al., 2018) - Social context analysis
-- **Custom datasets** - Curated news corpus
+Training data:
+- LIAR dataset — Wang, 2017
+- ISOT Fake News Dataset
+- FakeNewsNet — Shu et al., 2018
+- daniB2112/fake-news-dataset (HuggingFace)
+- WELFake, GonzaloA/fake_news, FEVER v1.0
 
-### Citation
-If you use FactCheckAI in academic research:
 ```bibtex
 @software{factcheckai2027,
-  title={FactCheckAI: Automated Fake News Detection System},
-  author={Bodapati Bharat Chandra},
-  year={2027},
-  url={https://github.com/BharatChandra-sys/FactCheckAI},
-  version={1.0.0},
-  license={Apache-2.0}
+  title   = {FactCheckAI: Multi-Signal Fake News Detection},
+  author  = {Bodapati Bharat Chandra},
+  year    = {2027},
+  url     = {https://github.com/BharatChandra-sys/FactCheckAI},
+  version = {2.6.1},
+  license = {Apache-2.0}
 }
 ```
 
@@ -533,14 +411,13 @@ If you use FactCheckAI in academic research:
 
 <p align="center">
   <br/>
-  <b>Open-source fact-checking powered by machine learning</b>
+  <b>Open-source fake news detection — honest about what it is, built to last</b>
   <br/><br/>
   <a href="https://github.com/BharatChandra-sys/FactCheckAI/stargazers">
     <img src="https://img.shields.io/github/stars/BharatChandra-sys/FactCheckAI?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
   </a>
   <br/><br/>
-  <a href="INFRASTRUCTURE_PLAN.md">Infrastructure Guide</a> •
-  <a href="https://your-api-docs.com">API Documentation</a> •
   <a href="https://github.com/BharatChandra-sys/FactCheckAI/issues">Report Issues</a> •
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href="CONTRIBUTING.md">Contributing</a> •
+  <a href="https://factcheckai-backend.onrender.com/health">Live API</a>
 </p>

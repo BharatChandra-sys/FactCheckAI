@@ -58,8 +58,13 @@ else:
 
     _connect_args = {
         "connect_timeout": 10,
-        "options": "-c statement_timeout=30000",  # 30s max query time
     }
+
+    # statement_timeout must NOT be sent via the pooled Neon URL (pgBouncer blocks it)
+    # Only add it when using a direct (non-pooled) connection
+    _is_pooled_url = "pooler" in DATABASE_URL
+    if not _is_pooled_url:
+        _connect_args["options"] = "-c statement_timeout=30000"
 
     # Neon requires sslmode=require — enforce it
     if "neon.tech" in DATABASE_URL and "sslmode" not in DATABASE_URL:

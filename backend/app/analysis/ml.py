@@ -3,14 +3,16 @@
 # SPDX-License-Identifier: Apache-2.0
 # Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 """
-ML Analysis — Multi-server architecture:
+ML Analysis — Multi-server architecture with 4-level fallback:
 
-Primary:  External ML Server 1 (Oracle Cloud - DeBERTa)
-          HTTP endpoint at ML_SERVER_1_URL
-Backup:   External ML Server 2 (HuggingFace - Ensemble)
-          HTTP endpoint at ML_SERVER_2_URL
-Fallback: Local TF-IDF + Logistic Regression from model.joblib
-          Always available, lightweight (50MB)
+Level 1:  Redis cache (in-process dict when Redis unavailable)
+Level 2:  ML Server 1 — fine-tuned RoBERTa-base (Bharat2004/factcheckai-model-a)
+          Configured via ML_SERVER_1_URL environment variable
+Level 3:  ML Server 2 — RoBERTa ensemble (model-a + model-b, 0.6/0.4 weight)
+          Configured via ML_SERVER_2_URL environment variable (HuggingFace Space)
+Level 4:  Local TF-IDF + Logistic Regression (model.joblib)
+          Always available, ~50ms, no external dependency
+Default:  0.5 neutral score if all levels fail (surfaces as "uncertain")
 """
 
 from __future__ import annotations
@@ -25,9 +27,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
 # ML Server URLs (from environment)
-ML_SERVER_1_URL = os.getenv("ML_SERVER_1_URL")  # Oracle Cloud DeBERTa
-ML_SERVER_2_URL = os.getenv("ML_SERVER_2_URL")  # HuggingFace Ensemble
-ML_API_KEY = os.getenv("ML_API_KEY")  # Shared API key for ML servers
+ML_SERVER_1_URL = os.getenv("ML_SERVER_1_URL")  # Primary: RoBERTa model-a (HF Space or self-hosted)
+ML_SERVER_2_URL = os.getenv("ML_SERVER_2_URL")  # Backup: RoBERTa ensemble model-a+b (HF Space)
+ML_API_KEY      = os.getenv("ML_API_KEY")        # Shared Bearer token for both servers
 
 # ── TF-IDF fallback (always available, lightweight) ──────────
 _model = None

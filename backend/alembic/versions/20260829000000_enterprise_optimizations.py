@@ -1,7 +1,7 @@
 """Enterprise optimizations: indexes, user_id on claim_records, timestamp on velocity_records
 
 Revision ID: 20260829000000
-Revises: 20260802000000_add_pubdate_to_claim_records
+Revises: 20260802000000
 Create Date: 2026-08-29
 """
 from alembic import op
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from sqlalchemy.engine.reflection import Inspector
 
 revision = '20260829000000'
-down_revision = '20260802000000_add_pubdate_to_claim_records'
+down_revision = '20260802000000'
 branch_labels = None
 depends_on = None
 
