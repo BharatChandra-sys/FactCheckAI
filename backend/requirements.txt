@@ -12,6 +12,7 @@ pydantic[email]==2.10.6
 sqlalchemy==2.0.40
 alembic==1.15.2
 psycopg2-binary==2.9.10
+pgvector==0.3.6                # Vector similarity search in PostgreSQL
 
 # ── System / utilities ────────────────────────────────────────
 psutil==7.0.0
@@ -24,6 +25,7 @@ numpy==1.26.4
 # IMPORTANT: Models trained with 1.6.1 — do NOT upgrade
 scikit-learn==1.6.1
 joblib==1.4.2
+rank-bm25==0.2.2               # BM25 lexical retrieval for hybrid search
 
 # ── NLP utilities ─────────────────────────────────────────────
 langdetect==1.0.9
@@ -39,6 +41,13 @@ google-generativeai==0.8.5
 groq==0.25.0
 cerebras-cloud-sdk==1.29.0
 openai==1.78.0
+
+# ── LangChain + LangGraph (RAG + agentic orchestration) ──────
+langchain==0.3.25
+langchain-community==0.3.23
+langchain-core==0.3.58
+langgraph==0.4.8
+langchain-openai==0.3.18       # For OpenAI-compatible LLM wrappers (Groq, Cerebras, etc.)
 
 # ── Caching ───────────────────────────────────────────────────
 redis==5.2.1
@@ -57,12 +66,11 @@ tweepy==4.15.0
 
 # ── Transformer models (OPTIONAL — NOT installed on Render free tier) ────────
 # Render free tier build times out installing torch (~800MB).
-# These are excluded from the default install via pip extras.
-# To enable locally: pip install torch transformers sentence-transformers hdbscan
-# On Render paid tier: uncomment these lines in requirements.txt
+# Enable locally: pip install torch transformers sentence-transformers hdbscan
+# On Render paid tier: uncomment these lines:
 # transformers==4.51.3
 # torch==2.6.0
-# sentence-transformers==3.4.1
+# sentence-transformers==3.4.1  # Required for embedding service + real cross-encoder
 # hdbscan==0.8.40
 
 # ── Testing ───────────────────────────────────────────────────

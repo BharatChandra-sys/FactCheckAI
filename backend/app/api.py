@@ -539,6 +539,55 @@ def message(
     # Record for drift detection
     record_drift(verdict, confidence)
 
+    # ── LangGraph memory write (non-blocking background task) ────
+    # Persists the result to fact_checks + evidence_documents for future RAG retrieval.
+    # Runs in a background thread so it never adds latency to the response.
+    def _persist_to_memory():
+        try:
+            from database import SessionLocal
+            from app.retrieval.vector_store import upsert_fact_check, upsert_evidence, link_evidence
+            _db = SessionLocal()
+            try:
+                fc = upsert_fact_check(
+                    _db,
+                    claim_hash         = hashlib.sha256(primary_claim.lower().strip().encode()).hexdigest(),
+                    claim_text         = primary_claim,
+                    verdict            = verdict,
+                    confidence         = confidence,
+                    tfidf_score        = ml_result.get("fake"),
+                    llm_verdict        = "fake" if ai_score > 0.5 else "real",
+                    llm_confidence     = ai_score,
+                    evidence_score     = evidence_score,
+                    manipulation_score = manip_score,
+                    rag_assessment     = None,
+                    language           = detected_lang,
+                    model_version      = "2.6.1",
+                )
+                for article in evidence_articles[:5]:
+                    url = article.get("url", "")
+                    if not url:
+                        continue
+                    doc = upsert_evidence(
+                        _db,
+                        url         = url,
+                        title       = article.get("title"),
+                        domain      = article.get("source", ""),
+                        stance      = article.get("stance"),
+                        trust_score = article.get("trust_score", 0.5),
+                        source_tier = 3,
+                        source_type = "news",
+                    )
+                    link_evidence(_db, fc.id, doc.id,
+                                  relevance_score=article.get("relevance_score"),
+                                  stance=article.get("stance"))
+            finally:
+                _db.close()
+        except Exception as e:
+            logger.debug("Background memory write failed: %s", e)
+
+    import threading
+    threading.Thread(target=_persist_to_memory, daemon=True, name="memory-write").start()
+
     # Temporal claim tracking + velocity persistence
     claim_hash = hashlib.sha256(primary_claim.lower().strip().encode()).hexdigest()
     try:

@@ -2,10 +2,36 @@
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
 # Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Index
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Index, Enum
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
+import enum
+
+# pgvector — lazy import so the module loads even without pgvector installed
+try:
+    from pgvector.sqlalchemy import Vector as PGVector
+    _VECTOR_AVAILABLE = True
+except ImportError:
+    PGVector = None
+    _VECTOR_AVAILABLE = False
+
+# Embedding dimension for all-MiniLM-L6-v2
+EMBEDDING_DIM = 384
+
+
+def _vector_col(dim: int = EMBEDDING_DIM):
+    """Return a pgvector Column if available, else Text (serialized JSON)."""
+    if _VECTOR_AVAILABLE and PGVector is not None:
+        return Column(PGVector(dim), nullable=True)
+    return Column(Text, nullable=True)  # fallback: store as JSON string
+
+
+class VerificationStatus(str, enum.Enum):
+    MODEL_ONLY      = "model_only"       # Only ML/LLM signals, no human review
+    VERIFIED        = "verified"          # High confidence + trustworthy evidence
+    HUMAN_REVIEWED  = "human_reviewed"   # Explicit human correction submitted
+    DISPUTED        = "disputed"          # Conflicting signals or low-trust sources
 
 
 class User(Base):
@@ -226,4 +252,130 @@ class ABTestEvent(Base):
     __table_args__ = (
         Index("ix_ab_events_test_variant", "test_id", "variant"),
         Index("ix_ab_events_test_type", "test_id", "event_type"),
+    )
+
+
+# ══════════════════════════════════════════════════════════════
+# Phase 1 — Persistent Fact Memory (RAG foundation)
+# ══════════════════════════════════════════════════════════════
+
+class FactCheck(Base):
+    """
+    Persistent memory of every qualified fact-check result.
+
+    Only high-confidence results with trustworthy evidence are stored
+    as VERIFIED. All others are stored as MODEL_ONLY, DISPUTED, or
+    HUMAN_REVIEWED. RAG retrieval prioritises VERIFIED and HUMAN_REVIEWED.
+
+    The embedding column enables semantic (vector) search via pgvector.
+    The claim_text column enables lexical (BM25) search.
+    Together these support hybrid retrieval.
+    """
+    __tablename__ = "fact_checks"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    claim_hash          = Column(String(64), unique=True, nullable=False, index=True)
+    claim_text          = Column(Text, nullable=False)
+    normalized_claim    = Column(Text, nullable=True)
+    embedding           = _vector_col()                  # 384-dim, all-MiniLM-L6-v2
+
+    # Final decision
+    verdict             = Column(String(16), nullable=False, index=True)  # real/fake/uncertain
+    confidence          = Column(Float, nullable=False)
+    verification_status = Column(String(20),
+                                 default=VerificationStatus.MODEL_ONLY,
+                                 nullable=False, index=True)
+
+    # Individual signal scores (kept for meta-model retraining)
+    ml_score_a          = Column(Float, nullable=True)   # RoBERTa model-a
+    ml_score_b          = Column(Float, nullable=True)   # RoBERTa model-b
+    tfidf_score         = Column(Float, nullable=True)
+    llm_verdict         = Column(String(16), nullable=True)
+    llm_confidence      = Column(Float, nullable=True)
+    evidence_score      = Column(Float, nullable=True)
+    manipulation_score  = Column(Float, nullable=True)
+    rag_assessment      = Column(Text, nullable=True)    # JSON — RAG structured output
+
+    # Metadata for temporal reasoning and source ranking
+    language            = Column(String(8), default="en", index=True)
+    topic               = Column(String(64), nullable=True, index=True)
+    entities            = Column(Text, nullable=True)    # JSON list
+    model_version       = Column(String(32), nullable=True)
+
+    created_at          = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at          = Column(DateTime, default=datetime.utcnow,
+                                 onupdate=datetime.utcnow)
+
+    evidence_links      = relationship("FactCheckEvidence", back_populates="fact_check",
+                                       cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_fact_checks_verdict_status", "verdict", "verification_status"),
+        Index("ix_fact_checks_topic_created", "topic", "created_at"),
+    )
+
+
+class EvidenceDocument(Base):
+    """
+    Persistent evidence corpus — news articles, official publications, fact-check sources.
+
+    The embedding enables semantic retrieval. url is unique so the same article
+    is never inserted twice. Stance and trust_score enable evidence-aware retrieval
+    (retrieve supporting vs contradicting evidence separately).
+
+    source_tier implements the 5-tier source hierarchy from the plan:
+      1 = official/government, 2 = research/institutional, 3 = reputable news,
+      4 = secondary websites, 5 = social/unknown
+    """
+    __tablename__ = "evidence_documents"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    url          = Column(String(2048), unique=True, nullable=False, index=True)
+    title        = Column(Text, nullable=True)
+    content      = Column(Text, nullable=True)
+    domain       = Column(String(256), nullable=True, index=True)
+    embedding    = _vector_col()                          # 384-dim
+
+    stance       = Column(String(16), nullable=True, index=True)  # support/contradict/neutral
+    trust_score  = Column(Float, default=0.5)
+    bias_label   = Column(String(32), nullable=True)
+    source_tier  = Column(Integer, default=4, index=True)         # 1 (best) to 5 (worst)
+    source_type  = Column(String(32), nullable=True)               # news/research/factcheck/gov
+
+    # Temporal fields for temporal reasoning
+    published_at = Column(DateTime, nullable=True, index=True)
+    retrieved_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    fact_check_links = relationship("FactCheckEvidence", back_populates="evidence_document")
+
+    __table_args__ = (
+        Index("ix_evidence_stance_tier", "stance", "source_tier"),
+        Index("ix_evidence_domain_published", "domain", "published_at"),
+    )
+
+
+class FactCheckEvidence(Base):
+    """
+    Many-to-many join between FactCheck and EvidenceDocument with scores.
+
+    relevance_score is set by the cross-encoder reranker.
+    stance is the cross-encoder's per-claim-evidence stance
+    (may differ from the document's global stance).
+    """
+    __tablename__ = "fact_check_evidence"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    fact_check_id       = Column(Integer, ForeignKey("fact_checks.id"),
+                                 nullable=False, index=True)
+    evidence_document_id = Column(Integer, ForeignKey("evidence_documents.id"),
+                                  nullable=False, index=True)
+    relevance_score     = Column(Float, nullable=True)
+    stance              = Column(String(16), nullable=True)  # claim-specific stance
+
+    fact_check        = relationship("FactCheck", back_populates="evidence_links")
+    evidence_document = relationship("EvidenceDocument", back_populates="fact_check_links")
+
+    __table_args__ = (
+        Index("ix_fce_fact_check_id", "fact_check_id"),
+        Index("ix_fce_evidence_id", "evidence_document_id"),
     )
