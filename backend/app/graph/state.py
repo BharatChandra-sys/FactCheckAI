@@ -4,7 +4,7 @@ LangGraph Shared State — FactCheckState
 This is the single shared state object that flows through the entire
 fact-checking workflow graph. Every node reads from and writes to this state.
 
-Design principles (from plan.md):
+Design principles (from docs/plan.md):
 - State is immutable within a node — nodes return updated state dicts
 - All signals are optional so nodes can handle partial state gracefully
 - The final_verdict field is only set by the meta-decision node

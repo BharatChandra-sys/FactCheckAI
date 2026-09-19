@@ -4,7 +4,7 @@ Agent Tools (Phase 7)
 Structured tool definitions for the agentic fact-checking workflow.
 Each tool returns a typed dict — never a plain string.
 
-Tools exposed (from plan.md section 15):
+Tools exposed (from docs/plan.md section 15):
   search_news(claim)
   retrieve_similar_claims(claim)
   retrieve_evidence(claim, stance)

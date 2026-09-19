@@ -180,9 +180,10 @@ backend/*.db
 .vscode/
 .idea/
 .kiro/
+.cursor/
+.superdesign/
 *.code-workspace
 .sixth/
-.superdesign/
 .DS_Store
 Thumbs.db
 *.swp

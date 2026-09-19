@@ -245,7 +245,7 @@ def retrieve_balanced_evidence(
     Retrieve balanced evidence: n_each supporting + n_each contradicting +
     n_each historical + up to 2 authoritative sources (tier 1–2).
 
-    This is the evidence-aware retrieval described in plan.md section 9.
+    This is the evidence-aware retrieval described in docs/plan.md section 9.
     """
     supporting    = retrieve_evidence(db, claim_text, top_k=n_each,
                                        stance="support",    max_tier=max_tier)

@@ -5,7 +5,7 @@ Sends retrieved context + claim to an LLM for structured evidence-grounded
 reasoning. The LLM does NOT classify the claim from memory — it reasons
 over the specific retrieved evidence. This is genuine RAG, not retrieval-only.
 
-Output schema (from plan.md section 11):
+Output schema (from docs/plan.md section 11):
 {
   "assessment":            "SUPPORTED" | "CONTRADICTED" | "INSUFFICIENT" | "UNCERTAIN",
   "confidence":            0.0–1.0,
