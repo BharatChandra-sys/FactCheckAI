@@ -45,7 +45,7 @@ gradio-client==1.4.3           # For calling HuggingFace Gradio Spaces
 # ── LangChain + LangGraph (RAG + agentic orchestration) ──────
 langchain==0.3.25
 langchain-community==0.3.23
-langchain-core==0.3.58
+langchain-core>=0.3.61,<1.0.0   # Flexible to satisfy langchain-openai
 langgraph==0.4.8
 langchain-openai==0.3.18       # For OpenAI-compatible LLM wrappers (Groq, Cerebras, etc.)
 
