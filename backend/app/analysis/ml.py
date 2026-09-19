@@ -9,7 +9,7 @@ Level 1:  Redis cache (in-process dict when Redis unavailable)
 Level 2:  ML Server 1 — fine-tuned RoBERTa-base (Bharat2004/factcheckai-model-a)
           Configured via ML_SERVER_1_URL environment variable
 Level 3:  ML Server 2 — RoBERTa ensemble (model-a + model-b, 0.6/0.4 weight)
-          Configured via ML_SERVER_2_URL environment variable (HuggingFace Space)
+          Configured via ML_SERVER_2_URL environment variable (HuggingFace Space with Gradio)
 Level 4:  Local TF-IDF + Logistic Regression (model.joblib)
           Always available, ~50ms, no external dependency
 Default:  0.5 neutral score if all levels fail (surfaces as "uncertain")
@@ -28,8 +28,11 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 
 # ML Server URLs (from environment)
 ML_SERVER_1_URL = os.getenv("ML_SERVER_1_URL")  # Primary: RoBERTa model-a (HF Space or self-hosted)
-ML_SERVER_2_URL = os.getenv("ML_SERVER_2_URL")  # Backup: RoBERTa ensemble model-a+b (HF Space)
+ML_SERVER_2_URL = os.getenv("ML_SERVER_2_URL")  # Backup: RoBERTa ensemble model-a+b (HF Space with Gradio)
 ML_API_KEY      = os.getenv("ML_API_KEY")        # Shared Bearer token for both servers
+
+# Gradio client for HF Spaces (lazy import)
+_gradio_client = None
 
 # ── TF-IDF fallback (always available, lightweight) ──────────
 _model = None
@@ -96,28 +99,36 @@ def _call_ml_server_1_sync(text: str) -> float | None:
 
 
 def _call_ml_server_2_sync(text: str) -> float | None:
-    """Call Ensemble server on HuggingFace Space (FastAPI mode) — synchronous."""
-    if not ML_SERVER_2_URL or not ML_API_KEY:
+    """Call Ensemble server on HuggingFace Space (Gradio) — synchronous."""
+    global _gradio_client
+    if not ML_SERVER_2_URL:
         logger.debug("ML Server 2 not configured")
         return None
     try:
-        with httpx.Client(timeout=20.0) as client:
-            response = client.post(
-                f"{ML_SERVER_2_URL}/predict",
-                json={"text": text, "use_cache": True},
-                headers={"Authorization": f"Bearer {ML_API_KEY}"},
-            )
-            if response.status_code == 200:
-                data  = response.json()
-                score = data.get("fake_probability")
-                logger.info("ML Server 2 (HF Ensemble): %.3f in %dms sources=%s",
-                            score, data.get("inference_ms", 0), data.get("model_sources"))
-                return score
-            else:
-                logger.warning("ML Server 2 returned status %d: %s",
-                               response.status_code, response.text[:100])
-    except httpx.TimeoutException:
-        logger.warning("ML Server 2 timeout (HF Space may be cold-starting)")
+        # Lazy import and initialize Gradio client
+        if _gradio_client is None:
+            from gradio_client import Client
+            _gradio_client = Client(ML_SERVER_2_URL)
+            logger.info("Initialized Gradio client for ML Server 2")
+        
+        # Call the predict function (first tab, first function)
+        result = _gradio_client.predict(
+            text,  # text input
+            ML_API_KEY or "",  # api_key input
+            api_name="/predict"
+        )
+        
+        if isinstance(result, dict):
+            score = result.get("fake_probability")
+            logger.info("ML Server 2 (HF Gradio): %.3f in %dms sources=%s",
+                        score, result.get("inference_ms", 0), result.get("model_sources"))
+            return score
+        else:
+            logger.warning("ML Server 2 unexpected response format: %s", result)
+    except Exception as e:
+        logger.warning("ML Server 2 error: %s", e)
+        # Reset client on error
+        _gradio_client = None
     except Exception as e:
         logger.warning("ML Server 2 failed: %s", e)
     return None

@@ -1,5 +1,5 @@
 """
-FactCheckAI ML Server — Gradio Interface with FastAPI
+FactCheckAI ML Server — Gradio Interface
 """
 import os
 import json
@@ -8,11 +8,9 @@ import hashlib
 import gradio as gr
 import spaces
 import torch
-from fastapi import FastAPI, HTTPException, Header
-from pydantic import BaseModel
-from typing import Optional
 
-ML_API_KEY   = os.getenv("ML_API_KEY", "")
+ML_API_KEY   = os.getenv("ML_API_KEY", "").strip() or None  # None if empty/whitespace
+print(f"DEBUG: ML_API_KEY configured: {ML_API_KEY is not None}, value_length: {len(ML_API_KEY) if ML_API_KEY else 0}")
 MODEL_A_REPO = os.getenv("MODEL_A_REPO", "Bharat2004/factcheckai-model-a")
 MODEL_B_REPO = os.getenv("MODEL_B_REPO", "Bharat2004/factcheckai-model-b")
 MODEL_C_REPO = os.getenv("MODEL_C_REPO", "Bharat2004/deberta-fakenews-detector")
@@ -67,7 +65,8 @@ def _infer_single(model, tokenizer, text: str) -> float:
 def predict(text, api_key=""):
     if not _models:
         return {"error": "No models loaded"}
-    if ML_API_KEY and api_key != ML_API_KEY:
+    # Only check API key if ML_API_KEY is configured (not None)
+    if ML_API_KEY is not None and api_key != ML_API_KEY:
         return {"error": "Invalid API key"}
     text = text.strip()[:2000]
     if not text:
@@ -145,55 +144,12 @@ def health():
     }
 
 
-# ─── FastAPI App for Backend Integration ─────────────────────────────────
-app = FastAPI(title="FactCheckAI ML Server")
-
-class PredictRequest(BaseModel):
-    text: str
-    use_cache: bool = True
-    api_key: Optional[str] = None
-
-class PredictResponse(BaseModel):
-    fake_probability: float
-    confidence: float
-    verdict: str
-    model_a_score: Optional[float]
-    model_b_score: Optional[float]
-    model_c_score: Optional[float]
-    ensemble_weights: dict
-    model_sources: list
-    cached: bool
-    inference_ms: int
-
-@app.get("/health")
-async def health_endpoint():
-    return health()
-
-@app.post("/predict", response_model=PredictResponse)
-async def predict_endpoint(
-    request: PredictRequest,
-    authorization: Optional[str] = Header(None)
-):
-    # Check API key if configured
-    if ML_API_KEY:
-        provided_key = request.api_key
-        if authorization and authorization.startswith("Bearer "):
-            provided_key = authorization[7:]
-        if provided_key != ML_API_KEY:
-            raise HTTPException(status_code=401, detail="Invalid API key")
-    
-    result = predict(request.text, request.api_key or "")
-    if "error" in result:
-        raise HTTPException(status_code=400, detail=result["error"])
-    return result
-
-
 # ─── Gradio Interface ─────────────────────────────────────────────────────
 
 
 with gr.Blocks(title="FactCheckAI ML Server") as demo:
     gr.Markdown("""
-    # 🤖 FactCheckAI ML Ensemble Server
+    # FactCheckAI ML Ensemble Server
     
     Fine-tuned RoBERTa models for fake news detection.
     
@@ -246,10 +202,8 @@ with gr.Blocks(title="FactCheckAI ML Server") as demo:
         )
 
 if __name__ == "__main__":
-    # Mount FastAPI app to Gradio
     demo.launch(
         server_name="0.0.0.0",
         server_port=7860,
-        share=False,
-        app=app  # Mount FastAPI alongside Gradio
+        share=False
     )
