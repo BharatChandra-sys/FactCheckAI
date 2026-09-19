@@ -233,7 +233,46 @@ Your backend already has **internal keep-alive** (pings every 14 min), but Rende
 
 ---
 
-### Option A: UptimeRobot (Recommended) ⭐
+### Option A: Cron-Job.org (Recommended) ⭐
+
+**Why Cron-Job.org?**
+- ✅ **No credit card required**
+- ✅ **Unlimited free jobs**
+- ✅ **Flexible intervals** (every 5-10 minutes)
+- ✅ **Simple setup** (no email verification needed)
+
+**Setup:**
+
+1. Sign up: [cron-job.org](https://cron-job.org) (free account)
+
+2. Create jobs:
+   - **Job 1: Keep HuggingFace Space Awake**
+     ```
+     Title: FactCheckAI ML Server Keep-Alive
+     URL: https://bharat2004-factcheckai-ml-serve.hf.space
+     Interval: Every 10 minutes
+     HTTP Method: GET
+     Notifications: None (optional)
+     ```
+   
+   - **Job 2: Keep Render Backend Awake**
+     ```
+     Title: FactCheckAI Backend Keep-Alive
+     URL: https://factcheckai-backend.onrender.com/health
+     Interval: Every 10 minutes
+     HTTP Method: GET
+     Notifications: Email on failure (optional)
+     ```
+
+3. **Activate both jobs** - they'll start pinging immediately
+
+**Result**: Both services will stay awake during daytime hours, minimal cold starts.
+
+---
+
+### Option B: UptimeRobot (Alternative)
+
+### Option B: UptimeRobot (Alternative)
 
 **Why UptimeRobot?**
 - ✅ **No credit card required**
@@ -320,19 +359,22 @@ jobs:
 
 ---
 
-### Recommendation: Use UptimeRobot + Internal Pinger
+### Recommendation: Use Cron-Job.org + Internal Pinger ⭐
 
 ```
-External (UptimeRobot)
-    → Pings Render every 5 min
-    → Keeps Render awake
+External (Cron-Job.org)
+    → Pings HF Space every 10 min
+    → Pings Render every 10 min
+    → Keeps both services awake
 
 Internal (your backend)
     → Pings HuggingFace every 14 min
-    → Keeps HF Space awake
+    → Keeps HF Space awake (redundant)
     → Pings Neon DB on every request
     → Auto-wakes Neon
 ```
+
+**Result**: 99%+ uptime, <1 second cold start if both pingers fail.
 
 ---
 

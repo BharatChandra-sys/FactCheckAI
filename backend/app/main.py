@@ -253,14 +253,12 @@ async def lifespan(app: FastAPI):
                     ml2 = os.getenv("ML_SERVER_2_URL")
                     if ml2:
                         try:
-                            # Try health endpoint first (lighter)
-                            response = _req.get(f"{ml2}/health", timeout=10)
+                            # Ping root URL - HF Spaces stays awake for ~15 min after activity
+                            response = _req.get(ml2, timeout=15)
                             if response.status_code == 200:
-                                logger.debug("✓ ML Server 2 (HF Spaces) keep-alive successful")
+                                logger.debug("✓ ML Server 2 (HF Space) keep-alive ping successful")
                             else:
-                                # If health endpoint doesn't exist, ping root
-                                _req.get(ml2, timeout=10)
-                                logger.debug("✓ ML Server 2 (HF Spaces) root ping successful")
+                                logger.warning("ML Server 2 returned status %d", response.status_code)
                         except Exception as e:
                             logger.warning("ML Server 2 keep-alive failed: %s", e)
                     
