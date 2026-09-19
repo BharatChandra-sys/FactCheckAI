@@ -22,8 +22,7 @@ httpx==0.28.1
 # ── Data science (lightweight) ────────────────────────────────
 pandas==2.2.3
 numpy==1.26.4
-# IMPORTANT: Models trained with 1.6.1 — do NOT upgrade
-scikit-learn==1.6.1
+scikit-learn==1.6.1            # Models trained with 1.6.1 — do NOT upgrade
 joblib==1.4.2
 rank-bm25==0.2.2               # BM25 lexical retrieval for hybrid search
 
@@ -61,17 +60,16 @@ prometheus-client==0.21.1
 pdfplumber==0.11.4
 python-docx==1.1.2
 
-# ── Social graph (optional — only used when SOCIAL_GRAPH_ENABLED=true) ───────
-praw==7.8.1
-tweepy==4.15.0
+# ── Social graph (OPTIONAL — only if SOCIAL_GRAPH_ENABLED=true) ───────
+# praw==7.8.1
+# tweepy==4.15.0
 
-# ── Transformer models (OPTIONAL — NOT installed on Render free tier) ────────
+# ── Transformer models (OPTIONAL — NOT on Render free tier) ────────
 # Render free tier build times out installing torch (~800MB).
-# Enable locally: pip install torch transformers sentence-transformers hdbscan
-# On Render paid tier: uncomment these lines:
+# Enable locally or on paid tier: pip install torch transformers sentence-transformers
 # transformers==4.51.3
 # torch==2.6.0
-# sentence-transformers==3.4.1  # Required for embedding service + real cross-encoder
+# sentence-transformers==3.4.1
 # hdbscan==0.8.40
 
 # ── Testing ───────────────────────────────────────────────────
