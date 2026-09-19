@@ -81,6 +81,35 @@ def health():
     )
 
 
+@router.api_route("/health/ping", methods=["GET", "HEAD"])
+def health_ping():
+    """Minimal health check for cron-job.org and monitoring services."""
+    try:
+        # Quick DB check using pool status (no query needed)
+        from database import engine
+        pool = engine.pool
+        db_ok = pool.size() >= 0  # Just check pool exists
+        
+        if db_ok:
+            return JSONResponse(
+                content={"status": "ok"},
+                status_code=200,
+                headers={"Cache-Control": "no-cache, no-store"},
+            )
+        else:
+            return JSONResponse(
+                content={"status": "error"},
+                status_code=503,
+                headers={"Cache-Control": "no-cache, no-store"},
+            )
+    except Exception:
+        return JSONResponse(
+            content={"status": "error"},
+            status_code=503,
+            headers={"Cache-Control": "no-cache, no-store"},
+        )
+
+
 @router.api_route("/health/detailed", methods=["GET"])
 def health_detailed():
     """Detailed health including drift stats — not used by load balancer pings."""
