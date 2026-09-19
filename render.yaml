@@ -59,6 +59,14 @@ services:
       - key: MINIMAX_API_KEY
         sync: false
 
+      # ── CORS Configuration ────────────────────────────────────
+      # Comma-separated list of web origins allowed to access the API
+      # Extensions are always allowed via regex (chrome-extension://* and extension://*)
+      # Example: https://yourapp.com,https://dashboard.yourapp.com
+      # Leave empty for default (localhost only)
+      - key: ALLOWED_ORIGINS
+        value: ""
+
       # ── ML Servers (hybrid architecture) ─────────────────────
       # ML Server 2 = HuggingFace Space with model_A + model_B ensemble
       # URL format: https://bharat2004-factcheckai-ml-server.hf.space

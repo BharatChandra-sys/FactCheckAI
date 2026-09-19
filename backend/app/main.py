@@ -334,13 +334,14 @@ app = FastAPI(
     openapi_url="/openapi.json" if os.getenv("ENABLE_DOCS", "false").lower() == "true" else None,
 )
 
-# ── CORS — restrict to known origins; Chrome extension pages send Origin: null ─
+# ── CORS — Allow browser extensions + web frontends ─────────────
 _RAW_ALLOWED = os.getenv("ALLOWED_ORIGINS", "")
 _ENV_ORIGINS = [o.strip() for o in _RAW_ALLOWED.split(",") if o.strip()]
 
-ALLOWED_ORIGINS = _ENV_ORIGINS or [
-    "https://fake-news-analyzer-j6ka.onrender.com",
-]
+# Default: localhost for local development
+# Browser extensions (chrome-extension://, extension://) are always allowed via regex below
+# Add your web app URLs to ALLOWED_ORIGINS env var if you deploy a web frontend
+ALLOWED_ORIGINS = _ENV_ORIGINS or ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 app.add_middleware(
     CORSMiddleware,
