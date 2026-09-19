@@ -126,11 +126,9 @@ def _call_ml_server_2_sync(text: str) -> float | None:
         else:
             logger.warning("ML Server 2 unexpected response format: %s", result)
     except Exception as e:
-        logger.warning("ML Server 2 error: %s", e)
-        # Reset client on error
-        _gradio_client = None
-    except Exception as e:
         logger.warning("ML Server 2 failed: %s", e)
+        # Reset client on error to force reconnection on next call
+        _gradio_client = None
     return None
 
 

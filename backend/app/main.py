@@ -253,23 +253,25 @@ async def lifespan(app: FastAPI):
                     ml2 = os.getenv("ML_SERVER_2_URL")
                     if ml2:
                         try:
-                            # Ping root URL - HF Spaces stays awake for ~15 min after activity
-                            response = _req.get(ml2, timeout=15)
-                            if response.status_code == 200:
-                                logger.debug("✓ ML Server 2 (HF Space) keep-alive ping successful")
+                            # Use HEAD request to minimize bandwidth (HF Spaces stays awake ~15 min after any activity)
+                            response = _req.head(ml2, timeout=10, allow_redirects=True)
+                            if response.status_code in (200, 301, 302, 405):  # 405 = Method Not Allowed is OK
+                                logger.debug("✓ ML Server 2 (HF Space) keep-alive successful")
                             else:
-                                logger.warning("ML Server 2 returned status %d", response.status_code)
+                                logger.warning("ML Server 2 keep-alive status %d", response.status_code)
+                        except _req.exceptions.Timeout:
+                            logger.debug("ML Server 2 keep-alive timeout (may be waking from sleep)")
                         except Exception as e:
                             logger.warning("ML Server 2 keep-alive failed: %s", e)
                     
-                    # Ping ML Server 1 healthcheck
+                    # Ping ML Server 1 healthcheck (if configured)
                     ml1 = os.getenv("ML_SERVER_1_URL")
                     if ml1:
                         try:
-                            _req.get(f"{ml1}/health", timeout=5)
+                            _req.head(f"{ml1}/health", timeout=5)
                             logger.debug("✓ ML Server 1 keep-alive successful")
                         except Exception as e:
-                            logger.warning("ML Server 1 keep-alive failed: %s", e)
+                            logger.debug("ML Server 1 keep-alive failed: %s", e)
                             
                 except Exception as e:
                     logger.debug("Keep-alive scheduler error: %s", e)
