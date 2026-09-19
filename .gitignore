@@ -80,6 +80,9 @@ PRODUCTION_READINESS_AUDIT.md
 FINAL_PRODUCTION_AUDIT_FIXES.md
 TECHNICAL_DOCUMENTATION.md
 TODO.md
+plan.md
+KEEP_ALIVE_SETUP.md
+QUICK_START.md
 
 # Windsurf / Cursor / IDE rules (local only)
 .windsurfrules
@@ -107,6 +110,9 @@ test_api.py
 SIMPLE_MODEL_CHECK.py
 TEST_MODEL_FROM_HF.py
 recreate_nijam_history.py
+check_vector_dim.py
+audit_database.py
+test_deployment.py
 !backend/tests/
 
 # Old documentation patterns (local only)

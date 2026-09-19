@@ -262,6 +262,18 @@ HuggingFace free Spaces sleep after inactivity. The background scheduler pings t
 
 ## Installation & Setup
 
+### Quick Start (5 minutes)
+
+See [QUICK_START.md](QUICK_START.md) for the fastest way to deploy (100% free, no credit card).
+
+### Full Deployment Guide
+
+See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for complete step-by-step instructions.
+
+### Keep Services Awake
+
+See [KEEP_ALIVE_SETUP.md](KEEP_ALIVE_SETUP.md) to configure monitoring and prevent cold starts.
+
 ### Chrome Extension
 
 ```bash

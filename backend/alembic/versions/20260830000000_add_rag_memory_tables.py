@@ -146,14 +146,17 @@ def upgrade():
             "ALTER TABLE evidence_documents ALTER COLUMN embedding TYPE vector(384) "
             "USING embedding::vector(384)"
         )
+        # Fix: Drop and recreate indexes with correct dimension
+        op.execute("DROP INDEX IF EXISTS ix_fact_checks_embedding_ivfflat")
+        op.execute("DROP INDEX IF EXISTS ix_evidence_embedding_ivfflat")
         # Create IVFFlat index for approximate nearest-neighbour search
         # lists=100 is appropriate for up to ~1M vectors
         op.execute(
-            "CREATE INDEX IF NOT EXISTS ix_fact_checks_embedding_ivfflat "
+            "CREATE INDEX ix_fact_checks_embedding_ivfflat "
             "ON fact_checks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)"
         )
         op.execute(
-            "CREATE INDEX IF NOT EXISTS ix_evidence_embedding_ivfflat "
+            "CREATE INDEX ix_evidence_embedding_ivfflat "
             "ON evidence_documents USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)"
         )
     except Exception:

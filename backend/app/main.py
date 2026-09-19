@@ -248,18 +248,33 @@ async def lifespan(app: FastAPI):
                 # ── Keep-alive pings (every 14 min) ───────────────
                 try:
                     import requests as _req
-                    # Ping HF Spaces ML server to prevent it sleeping
+                    
+                    # Ping ML Server 2 (HF Spaces) to prevent sleeping
                     ml2 = os.getenv("ML_SERVER_2_URL")
                     if ml2:
-                        _req.get(ml2, timeout=10)
-                        logger.debug("Keep-alive ping sent to ML Server 2 (HF Spaces)")
-                    # Ping DO ML server healthcheck
+                        try:
+                            # Try health endpoint first (lighter)
+                            response = _req.get(f"{ml2}/health", timeout=10)
+                            if response.status_code == 200:
+                                logger.debug("✓ ML Server 2 (HF Spaces) keep-alive successful")
+                            else:
+                                # If health endpoint doesn't exist, ping root
+                                _req.get(ml2, timeout=10)
+                                logger.debug("✓ ML Server 2 (HF Spaces) root ping successful")
+                        except Exception as e:
+                            logger.warning("ML Server 2 keep-alive failed: %s", e)
+                    
+                    # Ping ML Server 1 healthcheck
                     ml1 = os.getenv("ML_SERVER_1_URL")
                     if ml1:
-                        _req.get(f"{ml1}/health", timeout=5)
-                        logger.debug("Keep-alive ping sent to ML Server 1 (DO)")
+                        try:
+                            _req.get(f"{ml1}/health", timeout=5)
+                            logger.debug("✓ ML Server 1 keep-alive successful")
+                        except Exception as e:
+                            logger.warning("ML Server 1 keep-alive failed: %s", e)
+                            
                 except Exception as e:
-                    logger.debug("Keep-alive ping failed: %s", e)
+                    logger.debug("Keep-alive scheduler error: %s", e)
 
                 # ── Data collection (every hour) ──────────────────
                 if now - last_collection_check >= 3600:
