@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 Meta-decision engine.
 
@@ -52,15 +52,17 @@ def _heuristic(ml_fake, ai_fake, evidence_score, manip_score=0.0, text_len=0):
     Weighted heuristic â€” used as fallback when meta-model unavailable.
 
     Weights (must sum to 1.0):
-      AI LLM ensemble:  50% (most reliable signal)
-      Evidence:         28% (real-world corroboration)
-      ML model:         14% (TF-IDF / transformer)
-      Manipulation:      8% (conspiracy/emotional language)
+      AI LLM ensemble:  65% (most reliable signal - external APIs with RAG)
+      Evidence:         25% (real-world corroboration)
+      ML model:         5%  (TF-IDF / transformer - less trustworthy)
+      Manipulation:     5%  (conspiracy/emotional language)
+    
+    Note: ML models are less reliable, so AI gets much higher weight.
     """
-    ml_weight    = 0.08 if text_len < 50 else 0.14
-    ai_weight    = 0.60 if text_len < 50 else 0.50
-    ev_weight    = 0.28
-    manip_weight = 0.08
+    ml_weight    = 0.02 if text_len < 50 else 0.05  # Reduced from 14%
+    ai_weight    = 0.75 if text_len < 50 else 0.65  # Increased from 50-60%
+    ev_weight    = 0.25                              # Slightly reduced from 28%
+    manip_weight = 0.05                              # Reduced from 8%
 
     fake_score   = 0.0
     total_weight = 0.0
