@@ -14,9 +14,11 @@ services:
     region: oregon
     plan: free              # 512MB RAM, sleeps after 15min — UptimeRobot prevents this
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: gunicorn app.main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120 --keep-alive 75
     healthCheckPath: /health
+    buildPullRequestsEnabled: false  # Disable PR builds to save time
+    autoDeploy: true
 
     envVars:
       # ── Security ──────────────────────────────────────────────

@@ -20,8 +20,8 @@ requests==2.32.3
 httpx==0.28.1
 
 # ── Data science (lightweight) ────────────────────────────────
-pandas==2.2.3
-numpy==1.26.4
+pandas>=2.2.0,<3.0.0           # Use latest compatible wheel
+numpy>=1.26.0,<2.0.0           # Use latest compatible wheel
 scikit-learn==1.6.1            # Models trained with 1.6.1 — do NOT upgrade
 joblib==1.4.2
 rank-bm25==0.2.2               # BM25 lexical retrieval for hybrid search
