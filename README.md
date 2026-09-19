@@ -260,6 +260,32 @@ HuggingFace free Spaces sleep after inactivity. The background scheduler pings t
 
 ---
 
+---
+
+## 🚀 Deployment (100% Free, No Credit Card)
+
+**Complete deployment guide:** [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
+
+### Quick Deploy (5 minutes)
+
+1. **Database:** [neon.tech](https://neon.tech) → Create project → Copy connection URL
+2. **ML Models:** [huggingface.co/spaces](https://huggingface.co/spaces) → Create Space → Upload `ml-servers/huggingface-ensemble/`
+3. **Backend:** [render.com](https://render.com) → Blueprint → Connect repo → Set env vars
+4. **Keep Awake:** [uptimerobot.com](https://uptimerobot.com) → Add monitors (ping every 5 min)
+
+**Architecture:**
+```
+Chrome Extension → Render (FastAPI) → Neon (PostgreSQL+pgvector) + HF Spaces (RoBERTa)
+                       ↑
+                UptimeRobot keeps alive
+```
+
+**Cost:** $0/month forever
+
+**See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for step-by-step instructions.**
+
+---
+
 ## Installation & Setup
 
 ### Quick Start (5 minutes)
@@ -276,14 +302,20 @@ See [KEEP_ALIVE_SETUP.md](KEEP_ALIVE_SETUP.md) to configure monitoring and preve
 
 ### Chrome Extension
 
+**Option 1: Install from Chrome Web Store** (Recommended)  
+[Install FactCheckAI](https://chromewebstore.google.com/detail/factcheckai) - One-click install
+
+**Option 2: Manual Install (Developers)**
+
 ```bash
 git clone https://github.com/BharatChandra-sys/FactCheckAI.git
 cd FactCheckAI
 
 # Chrome -> Extensions -> Developer mode -> Load unpacked -> select 'extension' folder
+# Update extension/config.js with your backend URL
 ```
 
-### Backend (local)
+### Backend (Local Development)
 
 ```bash
 cd backend
