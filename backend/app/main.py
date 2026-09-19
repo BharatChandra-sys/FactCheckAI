@@ -345,9 +345,10 @@ ALLOWED_ORIGINS = _ENV_ORIGINS or [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=r"chrome-extension://.*",  # all extension origins
-    allow_methods=["GET", "POST", "DELETE", "PATCH", "HEAD"],
+    allow_origin_regex=r"(chrome-extension://.*|extension://.*)",  # Chrome + Edge extensions
+    allow_methods=["GET", "POST", "DELETE", "PATCH", "HEAD", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Client", "X-Client-Version", "X-Request-ID"],
+    allow_credentials=True,
     max_age=600,
 )
 
