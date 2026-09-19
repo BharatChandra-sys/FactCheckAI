@@ -8,7 +8,7 @@
 // In dev: load unpacked from localhost.
 const _IS_PROD = !!(chrome?.runtime?.getManifest?.().update_url);
 const API = _IS_PROD
-  ? "https://fake-news-analyzer-j6ka.onrender.com"   // Production (Render)
+  ? "https://factcheckai-coq3.onrender.com"   // Production (Render)
   : "http://localhost:8000";                           // Local dev
 
 const API_TIMEOUT_MS = 20000;

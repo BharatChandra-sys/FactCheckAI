@@ -3,6 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Project: FactCheckAI - https://github.com/BharatChandra-sys/fake-news-extension
 (() => {
+  console.log("[FactCheckAI] Content script v2.6.1 loaded");
+  
+  // Clean up any old tooltips from previous versions
+  const oldTooltip = document.getElementById("__factcheck_tooltip__");
+  if (oldTooltip) oldTooltip.remove();
+  
   let tooltip = null;
   let floatingToolbar = null;
   let quickActionPopup = null;
@@ -145,6 +151,9 @@
   }
 
   function showFloatingToolbar(x, y) {
+    // Remove any old tooltip first
+    removeTooltip();
+    
     if (!floatingToolbar) floatingToolbar = createFloatingToolbar();
 
     const tw = 280;
@@ -155,6 +164,8 @@
     floatingToolbar.style.top = `${top}px`;
     floatingToolbar.style.opacity = "1";
     floatingToolbar.style.transform = "translateY(0) scale(1)";
+    
+    console.log("[FactCheckAI] Floating toolbar shown at", left, top);
   }
 
   function removeFloatingToolbar() {
