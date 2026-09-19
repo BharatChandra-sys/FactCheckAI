@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 Security + observability middleware.
 
@@ -26,9 +26,9 @@ _LIMITS = {
     "/auth/login":           (10,  60),
     "/auth/signup":          (5,   60),
     "/auth/forgot-password": (5,  300),
-    "/auth/reset-password":  (5,   60),   # tightened â€” brute force guard
+    "/auth/reset-password":  (5,   60),
     "/auth/google":          (10,  60),
-    "/message":              (30,  60),
+    "/message":              (20,  60),   # Lowered from 30 to protect AI limits
     "/feedback":             (20,  60),
     "/stats":                (30,  60),
     "/credibility":          (20,  60),
