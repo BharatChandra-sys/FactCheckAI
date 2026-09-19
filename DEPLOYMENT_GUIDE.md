@@ -100,11 +100,49 @@ This guide shows how to deploy FactCheckAI using **only free services** without 
    - Go to [huggingface.co/spaces](https://huggingface.co/spaces)
    - Click **Create New Space**
    - Name: `factcheckai-ml-server`
-   - SDK: **Gradio** or **Docker** (use Docker for FastAPI)
-   - Hardware: **CPU Basic** (free, always-on)
+   - SDK: **Gradio** (free, works with FastAPI)
+   - Hardware: **CPU Basic - ZeroGPU** (free, always-on)
 
 4. **Deploy inference server**:
    - Copy files from `ml-servers/huggingface-ensemble/` to your Space
+   - **Important**: Rename `app.py` to `app_fastapi.py`
+   - Create a new `app.py` (Gradio wrapper):
+   
+   ```python
+   import gradio as gr
+   import requests
+   
+   # Import your FastAPI app
+   from app_fastapi import app as fastapi_app
+   
+   # Create Gradio interface that wraps FastAPI
+   def predict(text):
+       response = requests.post(
+           "http://localhost:7860/predict",
+           json={"text": text}
+       )
+       return response.json()
+   
+   # Launch FastAPI in background
+   import uvicorn
+   import threading
+   threading.Thread(
+       target=lambda: uvicorn.run(fastapi_app, host="0.0.0.0", port=7860),
+       daemon=True
+   ).start()
+   
+   # Gradio interface
+   interface = gr.Interface(
+       fn=predict,
+       inputs=gr.Textbox(label="Enter claim to verify"),
+       outputs=gr.JSON(label="Prediction"),
+       title="FactCheckAI ML Server",
+       description="RoBERTa ensemble for fake news detection"
+   )
+   
+   interface.launch()
+   ```
+   
    - Your Space will have a URL like:
    ```
    https://bharat2004-factcheckai-ml-server.hf.space

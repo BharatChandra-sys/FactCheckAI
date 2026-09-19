@@ -4,3 +4,4 @@ torch==2.6.0
 transformers==4.51.3
 accelerate==1.4.0
 pydantic==2.10.6
+gradio==5.11.0
