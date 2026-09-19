@@ -15,44 +15,44 @@
   let hideTimer = null;
 
   // ══════════════════════════════════════════════════════════
-  // 🎨 Arc-style Floating Toolbar (like Sider)
+  // 🎨 Arc-style Floating Toolbar (like Sider) - COMPACT
   // ══════════════════════════════════════════════════════════
   function createFloatingToolbar() {
     const toolbar = document.createElement("div");
     toolbar.id = "__factcheck_floating_toolbar__";
     toolbar.innerHTML = `
-      <button data-action="truthscan" title="Truth Scan" aria-label="Truth Scan">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2L2 7v7c0 5.5 3.8 10.7 10 12 6.2-1.3 10-6.5 10-12V7l-10-5z"/>
-          <path d="M9 12l2 2 4-4"/>
+      <button data-action="truthscan" title="Truth Scan" aria-label="Truth Scan" class="truthscan-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35"/>
         </svg>
       </button>
       <button data-action="copy" title="Copy" aria-label="Copy">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
           <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
         </svg>
       </button>
       <button data-action="highlight" title="Highlight" aria-label="Highlight">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 11l-6 6v3h9l3-3"/>
           <path d="M22 2L11 13"/>
         </svg>
       </button>
       <button data-action="note" title="Add Note" aria-label="Add Note">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
           <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
         </svg>
       </button>
       <div class="divider"></div>
       <button data-action="more" title="More" aria-label="More options">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
         </svg>
       </button>
       <button data-action="close" title="Close" aria-label="Close">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
@@ -63,56 +63,58 @@
       zIndex: "2147483647",
       display: "flex",
       alignItems: "center",
-      gap: "4px",
-      padding: "6px",
-      background: "rgba(30, 34, 40, 0.95)",
-      backdropFilter: "blur(20px)",
-      borderRadius: "12px",
-      border: "1px solid rgba(192,193,255,0.15)",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4)",
+      gap: "2px",
+      padding: "4px",
+      background: "rgba(26, 32, 44, 0.96)",
+      backdropFilter: "blur(16px)",
+      borderRadius: "10px",
+      border: "1px solid rgba(192, 193, 255, 0.2)",
+      boxShadow: "0 4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(192, 193, 255, 0.1)",
       opacity: "0",
       transform: "translateY(-4px) scale(0.95)",
       transition: "opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
       pointerEvents: "all",
     });
 
-    // Style buttons
+    // Style buttons - COMPACT SIZE
     const style = document.createElement("style");
     style.textContent = `
       #__factcheck_floating_toolbar__ button {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border: none;
         background: transparent;
-        color: #e8eaed;
-        border-radius: 8px;
+        color: #e2e8f0;
+        border-radius: 6px;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: all 0.12s ease;
         padding: 0;
       }
       #__factcheck_floating_toolbar__ button:hover {
-        background: rgba(255,255,255,0.1);
-        transform: scale(1.05);
+        background: rgba(192, 193, 255, 0.15);
+        transform: scale(1.08);
       }
       #__factcheck_floating_toolbar__ button:active {
-        transform: scale(0.95);
+        transform: scale(0.92);
       }
-      #__factcheck_floating_toolbar__ button[data-action="truthscan"] {
-        background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
-        color: white;
+      #__factcheck_floating_toolbar__ .truthscan-btn {
+        background: linear-gradient(135deg, #c0c1ff 0%, #a8a9ff 100%);
+        color: #101419;
+        box-shadow: 0 2px 8px rgba(192, 193, 255, 0.3);
       }
-      #__factcheck_floating_toolbar__ button[data-action="truthscan"]:hover {
-        background: linear-gradient(135deg, #8b70d6 0%, #7c3aed 100%);
-        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+      #__factcheck_floating_toolbar__ .truthscan-btn:hover {
+        background: linear-gradient(135deg, #a8a9ff 0%, #9091ff 100%);
+        box-shadow: 0 3px 12px rgba(192, 193, 255, 0.5);
+        transform: scale(1.08);
       }
       #__factcheck_floating_toolbar__ .divider {
         width: 1px;
-        height: 20px;
+        height: 16px;
         background: rgba(255,255,255,0.1);
-        margin: 0 2px;
+        margin: 0 1px;
       }
     `;
     document.head.appendChild(style);
@@ -241,13 +243,13 @@
         width: 32px;
         height: 32px;
         border-radius: 8px;
-        background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
-        color: white;
+        background: linear-gradient(135deg, #c0c1ff 0%, #a8a9ff 100%);
+        color: #101419;
       }
       #__factcheck_quick_popup__ .selected-preview {
         padding: 12px;
         margin-bottom: 12px;
-        background: rgba(255,255,255,0.05);
+        background: rgba(192, 193, 255, 0.05);
         border-radius: 8px;
         color: #9ca3af;
         font-size: 12px;
@@ -265,8 +267,8 @@
         padding: 10px 16px;
         border: none;
         border-radius: 8px;
-        background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
-        color: white;
+        background: linear-gradient(135deg, #c0c1ff 0%, #a8a9ff 100%);
+        color: #101419;
         font-size: 14px;
         font-weight: 600;
         font-family: -apple-system, Inter, sans-serif;
@@ -274,8 +276,8 @@
         transition: all 0.15s ease;
       }
       #__factcheck_quick_popup__ .action-btn:hover {
-        background: linear-gradient(135deg, #8b70d6 0%, #7c3aed 100%);
-        box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+        background: linear-gradient(135deg, #a8a9ff 0%, #9091ff 100%);
+        box-shadow: 0 4px 16px rgba(192, 193, 255, 0.4);
         transform: translateY(-1px);
       }
       #__factcheck_quick_popup__ .action-btn:active {
