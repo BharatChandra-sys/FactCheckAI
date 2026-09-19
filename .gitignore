@@ -60,29 +60,31 @@ backend/training/KAGGLE_EXECUTION_PLAN.md
 backend/training/UPLOAD_CHECKLIST.md
 
 # ── Keep-local documentation ─────────────────────────────────
-# These are local development files — NOT for GitHub
-ARCHITECTURE_DIAGRAM.md
-CLAUDE.md
-CREDIT_SYSTEM.md
-DEPLOYMENT_CHECKLIST.md
-DEPLOYMENT_JOURNEY.md
-DEPLOYMENT_SUMMARY.md
-GET_STARTED.md
-QUICKSTART_FREE.md
-DEPLOYMENT_100_PERCENT_FREE.md
-DEPLOYMENT_GITHUB_STUDENT.md
-DEPLOYMENT_NO_CREDIT_CARD.md
-DEPLOYMENT_FREE_TRANSFORMER.md
-DEPLOYMENT_HYBRID.md
-DEPLOYMENT_DIGITALOCEAN_STUDENT.md
-DEPLOYMENT_GITHUB_STUDENT_PACK_COMPLETE.md
-PRODUCTION_READINESS_AUDIT.md
-FINAL_PRODUCTION_AUDIT_FIXES.md
-TECHNICAL_DOCUMENTATION.md
-TODO.md
-plan.md
-KEEP_ALIVE_SETUP.md
-QUICK_START.md
+# These are local development files — moved to /docs folder
+/docs/ARCHITECTURE_DIAGRAM.md
+/docs/CLAUDE.md
+/docs/CREDIT_SYSTEM.md
+/docs/DEPLOYMENT_CHECKLIST.md
+/docs/DEPLOYMENT_JOURNEY.md
+/docs/DEPLOYMENT_SUMMARY.md
+/docs/GET_STARTED.md
+/docs/QUICKSTART_FREE.md
+/docs/DEPLOYMENT_100_PERCENT_FREE.md
+/docs/DEPLOYMENT_GITHUB_STUDENT.md
+/docs/DEPLOYMENT_NO_CREDIT_CARD.md
+/docs/DEPLOYMENT_FREE_TRANSFORMER.md
+/docs/DEPLOYMENT_HYBRID.md
+/docs/DEPLOYMENT_DIGITALOCEAN_STUDENT.md
+/docs/DEPLOYMENT_GITHUB_STUDENT_PACK_COMPLETE.md
+/docs/PRODUCTION_READINESS_AUDIT.md
+/docs/FINAL_PRODUCTION_AUDIT_FIXES.md
+/docs/TECHNICAL_DOCUMENTATION.md
+/docs/TODO.md
+/docs/plan.md
+/docs/KEEP_ALIVE_SETUP.md
+/docs/QUICK_START.md
+/docs/CHANGES_SUMMARY.md
+/docs/INFRASTRUCTURE_PLAN.md
 
 # Windsurf / Cursor / IDE rules (local only)
 .windsurfrules
@@ -147,8 +149,32 @@ PRODUCTION_TRAINING_*.md
 HF_UPLOAD_*.md
 commands.txt
 
-# Digital Ocean app config (now replaced by Heroku/Render)
-digitalocean-app.yaml
+# ── Root-level files that should stay local ──────────────────
+# These are development/test files in root - NOT for GitHub
+/app.py
+/app_gradio.py
+/*.json
+!package.json
+!manifest.json
+!tsconfig.json
+!render.yaml
+/secrets.env
+/Procfile
+
+# HuggingFace Space clones (local only)
+/factcheckai-ml-serve/
+/factcheckai-ml-server/
+
+# Old deployment configs
+/heroku-ml-server/
+/digitalocean-app.yaml
+
+# Local backend artifacts
+backend/*.py
+backend/*.json
+backend/*.db
+!backend/database.py
+!backend/run_tests.py
 
 # ── IDE & OS ──────────────────────────────────────────────────
 .vscode/
