@@ -1,48 +1,196 @@
 """
-FactCheckAI ML Server — Gradio Interface
-Wraps the FastAPI app for HuggingFace Spaces (Gradio SDK)
+FactCheckAI ML Server — Gradio Interface with FastAPI
 """
-import gradio as gr
+import os
 import json
-import uvicorn
-import threading
 import time
+import hashlib
+import gradio as gr
+import spaces
+import torch
+from fastapi import FastAPI, HTTPException, Header
+from pydantic import BaseModel
+from typing import Optional
 
-# Import FastAPI app
-from app import app as fastapi_app
+ML_API_KEY   = os.getenv("ML_API_KEY", "")
+MODEL_A_REPO = os.getenv("MODEL_A_REPO", "Bharat2004/factcheckai-model-a")
+MODEL_B_REPO = os.getenv("MODEL_B_REPO", "Bharat2004/factcheckai-model-b")
+MODEL_C_REPO = os.getenv("MODEL_C_REPO", "Bharat2004/deberta-fakenews-detector")
+HF_TOKEN     = os.getenv("HF_TOKEN", "")
+WEIGHT_A     = float(os.getenv("WEIGHT_A", "0.6"))
+WEIGHT_B     = float(os.getenv("WEIGHT_B", "0.4"))
+WEIGHT_C     = float(os.getenv("WEIGHT_C", "0.0"))
+DEVICE       = "cpu"
 
-# Start FastAPI server in background thread
-def start_fastapi():
-    uvicorn.run(fastapi_app, host="0.0.0.0", port=7860, log_level="info")
+_models: dict = {}
+_load_errors: dict = {}
+_startup_time = time.time()
+_pred_cache: dict = {}
+_CACHE_MAX = 2000
 
-threading.Thread(target=start_fastapi, daemon=True).start()
-time.sleep(2)  # Wait for FastAPI to start
 
-# Gradio prediction function
+def _cache_key(text: str) -> str:
+    return hashlib.sha256(text[:500].lower().strip().encode()).hexdigest()[:16]
+
+
+def _load_model(name: str, repo: str):
+    if not repo:
+        return
+    try:
+        from transformers import AutoTokenizer, AutoModelForSequenceClassification
+        tok = AutoTokenizer.from_pretrained(repo, token=HF_TOKEN or None)
+        mdl = AutoModelForSequenceClassification.from_pretrained(repo, token=HF_TOKEN or None)
+        mdl.eval()
+        _models[name] = (mdl, tok)
+        print(f"model_{name} loaded")
+    except Exception as e:
+        _load_errors[name] = str(e)
+        print(f"model_{name} load FAILED: {e}")
+
+
+_load_model("A", MODEL_A_REPO)
+_load_model("B", MODEL_B_REPO)
+if MODEL_C_REPO:
+    _load_model("C", MODEL_C_REPO)
+print(f"Startup complete. Loaded models: {list(_models.keys())}")
+
+
+def _infer_single(model, tokenizer, text: str) -> float:
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512, padding=True).to(DEVICE)
+    with torch.no_grad():
+        logits = model(**inputs).logits
+        probs = torch.softmax(logits, dim=-1)[0]
+    return float(probs[1])
+
+
+@spaces.GPU
 def predict(text, api_key=""):
-    import requests
-    try:
-        response = requests.post(
-            "http://localhost:7860/predict",
-            json={"text": text, "use_cache": True},
-            headers={"Authorization": f"Bearer {api_key}"} if api_key else {},
-            timeout=30
-        )
-        response.raise_for_status()
-        return json.dumps(response.json(), indent=2)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, indent=2)
+    if not _models:
+        return {"error": "No models loaded"}
+    if ML_API_KEY and api_key != ML_API_KEY:
+        return {"error": "Invalid API key"}
+    text = text.strip()[:2000]
+    if not text:
+        return {"error": "text cannot be empty"}
+    ck = _cache_key(text)
+    if ck in _pred_cache:
+        cached = dict(_pred_cache[ck])
+        cached["cached"] = True
+        return cached
 
-# Health check function
-def health_check():
-    import requests
-    try:
-        response = requests.get("http://localhost:7860/health", timeout=5)
-        return json.dumps(response.json(), indent=2)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, indent=2)
+    t0 = time.perf_counter()
+    scores = {}
+    for name in ["A", "B", "C"]:
+        if name in _models:
+            try:
+                scores[name] = _infer_single(*_models[name], text)
+            except Exception as e:
+                print(f"model_{name} inference error: {e}")
 
-# Build Gradio interface
+    sa, sb, sc = scores.get("A"), scores.get("B"), scores.get("C")
+    if sa is not None and sb is not None and sc is not None:
+        fake_prob = WEIGHT_A * sa + WEIGHT_B * sb + WEIGHT_C * sc
+        sources = ["model_A", "model_B", "model_C"]
+        weights = {"model_A": WEIGHT_A, "model_B": WEIGHT_B, "model_C": WEIGHT_C}
+    elif sa is not None and sb is not None:
+        fake_prob = WEIGHT_A * sa + WEIGHT_B * sb
+        sources = ["model_A", "model_B"]
+        weights = {"model_A": WEIGHT_A, "model_B": WEIGHT_B}
+    elif sa is not None:
+        fake_prob = sa
+        sources = ["model_A"]
+        weights = {"model_A": 1.0}
+    elif sb is not None:
+        fake_prob = sb
+        sources = ["model_B"]
+        weights = {"model_B": 1.0}
+    elif sc is not None:
+        fake_prob = sc
+        sources = ["model_C"]
+        weights = {"model_C": 1.0}
+    else:
+        return {"error": "All models failed inference"}
+
+    confidence = abs(fake_prob - 0.5) * 2
+    verdict = "fake" if fake_prob >= 0.5 else "real"
+    ms = int((time.perf_counter() - t0) * 1000)
+
+    result = {
+        "fake_probability": round(fake_prob, 4),
+        "confidence": round(confidence, 4),
+        "verdict": verdict,
+        "model_a_score": round(sa, 4) if sa is not None else None,
+        "model_b_score": round(sb, 4) if sb is not None else None,
+        "model_c_score": round(sc, 4) if sc is not None else None,
+        "ensemble_weights": weights,
+        "model_sources": sources,
+        "cached": False,
+        "inference_ms": ms,
+    }
+    if len(_pred_cache) >= _CACHE_MAX:
+        oldest = next(iter(_pred_cache))
+        del _pred_cache[oldest]
+    _pred_cache[_cache_key(text)] = result
+    return result
+
+
+def health():
+    return {
+        "status": "healthy" if _models else "degraded",
+        "loaded_models": list(_models.keys()),
+        "load_errors": _load_errors,
+        "device": DEVICE,
+        "uptime_s": int(time.time() - _startup_time),
+        "cache_size": len(_pred_cache),
+    }
+
+
+# ─── FastAPI App for Backend Integration ─────────────────────────────────
+app = FastAPI(title="FactCheckAI ML Server")
+
+class PredictRequest(BaseModel):
+    text: str
+    use_cache: bool = True
+    api_key: Optional[str] = None
+
+class PredictResponse(BaseModel):
+    fake_probability: float
+    confidence: float
+    verdict: str
+    model_a_score: Optional[float]
+    model_b_score: Optional[float]
+    model_c_score: Optional[float]
+    ensemble_weights: dict
+    model_sources: list
+    cached: bool
+    inference_ms: int
+
+@app.get("/health")
+async def health_endpoint():
+    return health()
+
+@app.post("/predict", response_model=PredictResponse)
+async def predict_endpoint(
+    request: PredictRequest,
+    authorization: Optional[str] = Header(None)
+):
+    # Check API key if configured
+    if ML_API_KEY:
+        provided_key = request.api_key
+        if authorization and authorization.startswith("Bearer "):
+            provided_key = authorization[7:]
+        if provided_key != ML_API_KEY:
+            raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    result = predict(request.text, request.api_key or "")
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+# ─── Gradio Interface ─────────────────────────────────────────────────────
+
+
 with gr.Blocks(title="FactCheckAI ML Server") as demo:
     gr.Markdown("""
     # 🤖 FactCheckAI ML Ensemble Server
@@ -51,9 +199,10 @@ with gr.Blocks(title="FactCheckAI ML Server") as demo:
     
     - **Model A**: 96.3% accuracy (daniB2112 dataset)
     - **Model B**: 79.8% accuracy (mixed datasets)
+    - **Model C**: DeBERTa fallback
     - **Ensemble**: Weighted average (0.6/0.4)
     
-    ### Endpoints:
+    ### API Endpoints:
     - `GET /health` - Server status
     - `POST /predict` - Classify claim
     """)
@@ -92,10 +241,15 @@ with gr.Blocks(title="FactCheckAI ML Server") as demo:
         health_output = gr.JSON(label="Server Status")
         
         health_btn.click(
-            fn=health_check,
+            fn=health,
             outputs=health_output
         )
 
-# Launch
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=False)
+    # Mount FastAPI app to Gradio
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+        share=False,
+        app=app  # Mount FastAPI alongside Gradio
+    )

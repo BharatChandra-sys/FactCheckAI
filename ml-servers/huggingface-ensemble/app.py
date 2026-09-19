@@ -37,10 +37,13 @@ logger = logging.getLogger(__name__)
 ML_API_KEY   = os.getenv("ML_API_KEY", "")
 MODEL_A_REPO = os.getenv("MODEL_A_REPO", "Bharat2004/factcheckai-model-a")
 MODEL_B_REPO = os.getenv("MODEL_B_REPO", "Bharat2004/factcheckai-model-b")
+MODEL_C_REPO = os.getenv("MODEL_C_REPO", "Bharat2004/deberta-fakenews-detector")
 HF_TOKEN     = os.getenv("HF_TOKEN", "")
 WEIGHT_A     = float(os.getenv("WEIGHT_A", "0.6"))
 WEIGHT_B     = float(os.getenv("WEIGHT_B", "0.4"))
-DEVICE       = "cuda" if torch.cuda.is_available() else "cpu"
+WEIGHT_C     = float(os.getenv("WEIGHT_C", "0.0"))
+# ZeroGPU intercepts CUDA via @spaces.GPU; always use cpu here
+DEVICE       = "cpu"
 
 # ── App ───────────────────────────────────────────────────────
 app = FastAPI(title="FactCheckAI ML Server", version="1.0.0")
@@ -101,6 +104,8 @@ def _load_model(name: str, repo: str):
 def startup():
     _load_model("A", MODEL_A_REPO)
     _load_model("B", MODEL_B_REPO)
+    if MODEL_C_REPO:
+        _load_model("C", MODEL_C_REPO)
     loaded = list(_models.keys())
     logger.info("Startup complete. Loaded models: %s", loaded)
 
@@ -175,26 +180,42 @@ def predict(req: PredictRequest, _=Depends(verify_key)):
 
     t0 = time.perf_counter()
 
-    score_a: Optional[float] = None
-    score_b: Optional[float] = None
-
+    scores = {}
     if "A" in _models:
         try:
-            score_a = _infer_single(*_models["A"], text)
+            scores["A"] = _infer_single(*_models["A"], text)
         except Exception as e:
             logger.warning("model_A inference error: %s", e)
 
     if "B" in _models:
         try:
-            score_b = _infer_single(*_models["B"], text)
+            scores["B"] = _infer_single(*_models["B"], text)
         except Exception as e:
             logger.warning("model_B inference error: %s", e)
 
-    # Weighted ensemble — fallback gracefully if one model missing
-    if score_a is not None and score_b is not None:
+    if "C" in _models:
+        try:
+            scores["C"] = _infer_single(*_models["C"], text)
+        except Exception as e:
+            logger.warning("model_C inference error: %s", e)
+
+    # Weighted ensemble — fallback gracefully if some models missing
+    score_a = scores.get("A")
+    score_b = scores.get("B")
+    score_c = scores.get("C")
+
+    if score_a is not None and score_b is not None and score_c is not None:
+        fake_prob = WEIGHT_A * score_a + WEIGHT_B * score_b + WEIGHT_C * score_c
+        sources   = ["model_A", "model_B", "model_C"]
+        weights   = {"model_A": WEIGHT_A, "model_B": WEIGHT_B, "model_C": WEIGHT_C}
+    elif score_a is not None and score_b is not None:
         fake_prob = WEIGHT_A * score_a + WEIGHT_B * score_b
         sources   = ["model_A", "model_B"]
         weights   = {"model_A": WEIGHT_A, "model_B": WEIGHT_B}
+    elif score_a is not None and score_c is not None:
+        fake_prob = WEIGHT_A * score_a + WEIGHT_C * score_c
+        sources   = ["model_A", "model_C"]
+        weights   = {"model_A": WEIGHT_A, "model_C": WEIGHT_C}
     elif score_a is not None:
         fake_prob = score_a
         sources   = ["model_A"]
@@ -203,8 +224,12 @@ def predict(req: PredictRequest, _=Depends(verify_key)):
         fake_prob = score_b
         sources   = ["model_B"]
         weights   = {"model_B": 1.0}
+    elif score_c is not None:
+        fake_prob = score_c
+        sources   = ["model_C"]
+        weights   = {"model_C": 1.0}
     else:
-        raise HTTPException(500, "Both models failed inference")
+        raise HTTPException(500, "All models failed inference")
 
     confidence = abs(fake_prob - 0.5) * 2
     verdict    = "fake" if fake_prob >= 0.5 else "real"
@@ -216,6 +241,7 @@ def predict(req: PredictRequest, _=Depends(verify_key)):
         "verdict":          verdict,
         "model_a_score":    round(score_a, 4) if score_a is not None else None,
         "model_b_score":    round(score_b, 4) if score_b is not None else None,
+        "model_c_score":    round(score_c, 4) if score_c is not None else None,
         "ensemble_weights": weights,
         "model_sources":    sources,
         "cached":           False,
