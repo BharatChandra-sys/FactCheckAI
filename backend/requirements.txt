@@ -20,8 +20,8 @@ requests==2.32.3
 httpx==0.28.1
 
 # ── Data science (lightweight) ────────────────────────────────
-pandas>=2.2.0,<3.0.0           # Use latest compatible wheel
-numpy>=1.26.0,<2.0.0           # Use latest compatible wheel
+pandas==2.2.3                  # Pinned for stability
+numpy==1.26.4                  # Pinned for scikit-learn compatibility
 scikit-learn==1.6.1            # Models trained with 1.6.1 — do NOT upgrade
 joblib==1.4.2
 rank-bm25==0.2.2               # BM25 lexical retrieval for hybrid search
@@ -45,7 +45,7 @@ gradio-client==1.4.3           # For calling HuggingFace Gradio Spaces
 # ── LangChain + LangGraph (RAG + agentic orchestration) ──────
 langchain==0.3.25
 langchain-community==0.3.23
-langchain-core>=0.3.61,<1.0.0   # Flexible to satisfy langchain-openai
+langchain-core==0.3.61          # Pinned - compatible with all langchain packages
 langgraph==0.4.8
 langchain-openai==0.3.18       # For OpenAI-compatible LLM wrappers (Groq, Cerebras, etc.)
 
