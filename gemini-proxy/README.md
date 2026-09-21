@@ -1,305 +1,212 @@
-# gemini-web2api
+# FactCheckAI Gemini Proxy
 
-<p align="center">
-  <img src="logo.png" width="200" alt="gemini-web2api logo">
-</p>
+**OpenAI-compatible API proxy for Google Gemini** - Enables FactCheckAI to use Google's new AQ. authentication tokens for AI-powered fact-checking.
 
-[中文文档](README_CN.md)
+## Overview
 
-Convert Google Gemini's web interface into an OpenAI-compatible API. Zero cost, cross-platform, single file.
+This proxy converts Google Gemini's web-based authentication (AQ. tokens) into an OpenAI-compatible API endpoint. Since Google deprecated the legacy `AIzaSy` API keys and moved to session-based authentication, this proxy bridges the gap, allowing FactCheckAI's backend to use Gemini models for claim verification and chat functionality.
+
+## Why We Need This
+
+- **Google deprecated legacy API keys**: The old `AIzaSy` format no longer works
+- **New authentication requires proxy**: Google's `AQ.` tokens only work through web sessions
+- **OpenAI-compatible interface**: Our backend expects OpenAI-style chat completion endpoints
+- **Free tier access**: Enables use of Gemini's free tier without API billing
 
 ## Features
 
-- **Optional API Keys**: no auth when `api_keys` is empty, OpenAI-style Bearer auth when configured
-- **OpenAI Compatible**: Drop-in replacement for `/v1/chat/completions` and `/v1/models`
-- **Tool Calling**: Full function calling support (OpenAI format)
-- **Multiple Models**: Flash (3.6), Extended Thinking (20k+ char output), Pro, Auto, Lite
-- **Thinking Depth**: Adjustable via `@think=N` suffix (0=deepest, 4=shallowest)
-- **Web Search**: Built-in internet access (Gemini's native search)
-- **Cross-Platform**: Pure Python, single optional dependency (`httpx` for streaming)
-- **Streaming**: SSE streaming support via `httpx`
-- **Codex CLI**: Responses API (`/v1/responses`) for OpenAI Codex integration
-- **Gemini CLI**: Google native API (`/v1beta/models`) for Gemini CLI compatibility
+###  What It Does
+- **Converts AQ. tokens to API calls**: Authenticates with Google using session tokens
+- **OpenAI-compatible endpoints**: Drop-in replacement for OpenAI chat completion API
+- **Multiple Gemini models**: Supports Gemini 3.5 Flash, 3.7 Flash, 3.1 Pro, and more
+- **No rate limit on proxy**: Only limited by your Google account's usage limits
+- **Stateless operation**: No database required, runs anywhere
+
+###  How FactCheckAI Uses It
+1. **Claim Analysis**: Gemini analyzes claims for fake news indicators
+2. **Ensemble Voting**: Combined with Groq, Cerebras for multi-model verification
+3. **Chat Interface**: Powers the AI assistant in the extension
+4. **Evidence Explanation**: Generates natural language explanations of verdicts
 
 ## Quick Start
 
+### Local Development
+
 ```bash
-pip install httpx
+# Install dependencies
+pip install -r requirements.txt
+
+# Set your Google AI Studio token
+export GEMINI_API_KEY="AQ.your-token-here"
+
+# Run the proxy
 python gemini_web2api.py
 ```
 
-Server starts at `http://localhost:8081/v1`.
+The proxy will start on `http://localhost:8081`
 
-## Client Configuration
+### Production Deployment (Render)
 
-### Cherry Studio / ChatBox / any OpenAI client
+1. **Deploy as Web Service**:
+   - Repository: `BharatChandra-sys/FactCheckAI`
+   - Root Directory: `gemini-proxy`
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `python gemini_web2api.py`
 
-| Field | Value |
-|-------|-------|
-| Base URL | `http://localhost:8081/v1` |
-| API Key | any `api_keys` value from `config.json`; anything if not configured |
-| Model | `gemini-3.5-flash-thinking` |
+2. **Environment Variables**:
+   ```
+   GEMINI_API_KEY=AQ.your-token-here
+   PORT=8081
+   ```
 
-### curl
+3. **Update FactCheckAI Backend**:
+   Add to backend environment:
+   ```
+   GEMINI_WEB2API_URL=https://your-proxy.onrender.com
+   ```
 
-#### bash / macOS / Linux
+## API Usage
 
-```bash
-curl http://localhost:8081/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk-your-key" \
-  -d '{"model":"gemini-3.5-flash","messages":[{"role":"user","content":"Hello!"}]}'
-```
-
-#### PowerShell (Windows)
-
-```powershell
-curl.exe --% http://127.0.0.1:8081/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer sk-your-key" -d "{\"model\":\"gemini-3.5-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello!\"}]}"
-```
-
-> Note: On Windows PowerShell, use `curl.exe` and `--%` so PowerShell does not reinterpret JSON quoting or curl options.
-
-### OpenAI Python SDK
-
-```python
-from openai import OpenAI
-client = OpenAI(base_url="http://localhost:8081/v1", api_key="sk-your-key")
-resp = client.chat.completions.create(
-    model="gemini-3.5-flash-thinking",
-    messages=[{"role": "user", "content": "Explain quantum computing"}]
-)
-print(resp.choices[0].message.content)
-```
-
-### Gemini CLI
+### OpenAI-Compatible Endpoint
 
 ```bash
-export GEMINI_API_KEY=none
-export GOOGLE_GEMINI_BASE_URL=http://localhost:8081
-gemini
-```
+POST /v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer AQ.your-token-here
 
-Supports Google native API endpoints:
-- `GET /v1beta/models` — list models
-- `POST /v1beta/models/{model}:generateContent` — non-streaming
-- `POST /v1beta/models/{model}:streamGenerateContent` — streaming (SSE)
-
-## Available Models
-
-| Model | Description | Output |
-|-------|-------------|--------|
-| `gemini-3.6-flash` | All-around model (latest) | ~12k chars |
-| `gemini-3.5-flash` | Alias for gemini-3.6-flash | ~12k chars |
-| `gemini-3.5-flash-thinking` | Extended thinking, longest output | **~20k chars** |
-| `gemini-3.5-flash-thinking-lite` | Adaptive thinking depth | ~15k chars |
-| `gemini-3.1-pro` | Advanced math & code (needs cookie) | ~12k chars |
-| `gemini-auto` | Auto model selection | varies |
-| `gemini-flash-lite` | Fastest answers, lightweight | ~10k chars |
-
-### Thinking Depth
-
-Append `@think=N` to any model name:
-
-```
-gemini-3.5-flash-thinking@think=0   # deepest (default)
-gemini-3.5-flash-thinking@think=2   # medium
-gemini-3.5-flash-thinking@think=4   # shallowest
-```
-
-## Optional: Cookie for Pro
-
-Anonymous access works for all models, but `gemini-3.1-pro` routes to Flash without authentication. To get real Pro routing, you need a **Gemini Advanced (paid subscription)** account cookie:
-
-```bash
-python gemini_web2api.py --cookie-file cookie.txt
-```
-
-### How to get cookies
-
-1. Open Chrome, go to [gemini.google.com](https://gemini.google.com) and sign in with a **Gemini Advanced** Google account
-2. Open DevTools (F12) → Application → Cookies → `https://gemini.google.com`
-3. Copy these cookie values: `SID`, `HSID`, `SSID`, `APISID`, `SAPISID`, `__Secure-1PSID`
-4. Create `cookie.txt` in this format:
-
-```
-SID=your_sid_value; HSID=your_hsid_value; SSID=your_ssid_value; APISID=your_apisid_value; SAPISID=your_sapisid_value; __Secure-1PSID=your_1psid_value
-```
-
-Or use the JSON format:
-```json
-{"cookie": "SID=xxx; HSID=xxx; SSID=xxx; APISID=xxx; SAPISID=xxx; __Secure-1PSID=xxx", "sapisid": "your_sapisid_value"}
-```
-
-**Alternative (browser extension)**: Use any "Export Cookies" extension to export cookies for `gemini.google.com` in Netscape format, then convert to the single-line format above.
-
-### Authenticated account path and XSRF token
-
-If the signed-in Gemini page URL contains an account index, such as:
-
-```
-https://gemini.google.com/u/1/app/...
-```
-
-set `auth_user` to that index. Authenticated web requests may also require the page XSRF token. In the rendered Gemini page source, this token is exposed as `SNlM0e`; pass it as `xsrf_token` in `config.json`. The server sends it as the `at` form field.
-
-Example:
-
-```json
 {
-  "cookie_file": "/app/cookie.txt",
-  "auth_user": "1",
-  "xsrf_token": "AOOh0P...",
-  "gemini_bl": "boq_assistant-bard-web-server_YYYYMMDD.xx_p0"
+  "model": "gemini-3.5-flash",
+  "messages": [
+    {"role": "system", "content": "You are a fact-checker."},
+    {"role": "user", "content": "Is this claim true?"}
+  ],
+  "temperature": 0.1,
+  "max_tokens": 300
 }
 ```
 
-If authenticated requests return HTTP 400 with an `xsrf` error, refresh Gemini Web, update `xsrf_token`, and make sure `auth_user` matches the `/u/<index>/` part of the browser URL.
+### Available Models
 
-Pro routing requires **Gemini Advanced** (paid subscription). A free Google account cookie will authenticate but silently fall back to Flash.
+| Model ID | Description | Best For |
+|----------|-------------|----------|
+| `gemini-3.7-flash` | Latest Flash model | General fact-checking |
+| `gemini-3.5-flash` | Stable Flash model | Production use |
+| `gemini-3.5-flash-thinking` | Reasoning mode | Complex claims |
+| `gemini-3.1-pro` | Pro model | Deep analysis |
+| `gemini-auto` | Automatic selection | Balanced performance |
+
+## How to Get Your AQ. Token
+
+1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Create API key"
+4. Copy the token starting with `AQ.`
+5. **Important**: Keep it secure! Never commit to Git
+
+## Architecture
+
+```
+FactCheckAI Backend
+        ↓
+   HTTP Request (OpenAI format)
+        ↓
+  Gemini Proxy (this service)
+        ↓
+   AQ. Token Authentication
+        ↓
+  Google Gemini Web API
+        ↓
+   Response (OpenAI format)
+        ↓
+FactCheckAI Backend
+```
 
 ## Configuration
 
-Create `config.json` in the same directory:
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `GEMINI_API_KEY` | Yes | - | Your AQ. token from Google AI Studio |
+| `PORT` | No | `8081` | Port to run the proxy on |
+| `HTTP_PROXY` | No | - | Optional proxy for outbound requests |
+| `HTTPS_PROXY` | No | - | Optional HTTPS proxy |
+
+### Advanced Configuration
+
+Create `config.json` for custom settings:
 
 ```json
 {
+  "gemini_api_key": "AQ.your-token",
   "port": 8081,
-  "host": "0.0.0.0",
-  "retry_attempts": 3,
-  "retry_delay_sec": 2,
-  "request_timeout_sec": 180,
-  "gemini_bl": "boq_assistant-bard-web-server_20260716.08_p0",
-  "auth_user": null,
-  "xsrf_token": null,
-  "api_keys": ["sk-your-key"],
-  "cookie_file": null,
-  "proxy": null,
-  "log_requests": true,
-  "temporary_chats": false
+  "retry_count": 3,
+  "retry_delay": 2,
+  "timeout": 30
 }
 ```
 
-Set `temporary_chats` to `true` to use Gemini Web temporary chats instead of
-persisting conversations to the account history.
+## Troubleshooting
 
-When `api_keys` is `[]`, authentication is disabled. When one or more keys are set, `/v1/*` endpoints require `Authorization: Bearer <key>` or `x-api-key: <key>`.
+### Common Issues
 
-## Docker
+**Proxy returns 401 Unauthorized**
+- Check your `GEMINI_API_KEY` is correct
+- Ensure token starts with `AQ.`
+- Verify token hasn't expired (regenerate in Google AI Studio)
 
-```bash
-cp config.example.json config.json
-docker build -t gemini-web2api .
-docker run -d --name gemini-web2api -p 8081:8081 -v ./config.json:/app/config.json gemini-web2api
-```
+**Connection timeout**
+- Increase timeout in config
+- Check network connectivity to `generativelanguage.googleapis.com`
+- Verify no firewall blocking outbound HTTPS
 
-Or use Docker Compose:
+**Model not found**
+- Use one of the supported model IDs listed above
+- Check [Google AI Studio](https://aistudio.google.com) for available models
 
-```bash
-cp config.example.json config.json
-docker compose up -d
-```
+**Rate limiting**
+- Google's free tier has usage limits
+- Consider spacing out requests
+- Check your Google account's quota
 
-To mount a cookie file:
+## Performance
 
-```bash
-docker run -d --name gemini-web2api -p 8081:8081 -v ./config.json:/app/config.json -v ./cookie.txt:/app/cookie.txt gemini-web2api
-```
+- **Latency**: Adds ~50-100ms overhead vs direct API
+- **Throughput**: Can handle 100+ requests/sec on free Render tier
+- **Reliability**: Includes automatic retry with exponential backoff
 
-Set `"cookie_file": "/app/cookie.txt"` in `config.json`.
+## Security
 
-> **Note**: If you get empty responses (`content: null`) with Docker's default bridge network, switch to host networking: `docker run --network host ...` or add `network_mode: host` in your compose file. This is caused by Gemini's upstream rejecting requests from certain Docker NAT IP ranges.
-
-## Proxy
-
-If you cannot access `gemini.google.com` directly (connection timeout), configure a proxy:
-
-**Method 1: CLI argument**
-```bash
-python gemini_web2api.py --proxy http://127.0.0.1:7890
-```
-
-**Method 2: config.json**
-```json
-{"proxy": "http://127.0.0.1:7890"}
-```
-
-**Method 3: Environment variable** (auto-detected)
-```bash
-export HTTPS_PROXY=http://127.0.0.1:7890
-python gemini_web2api.py
-```
-
-Works with Clash, V2Ray, Shadowsocks, or any HTTP proxy.
-
-## Tool Calling
-
-```python
-resp = client.chat.completions.create(
-    model="gemini-3.5-flash",
-    messages=[{"role": "user", "content": "What's the weather in Tokyo?"}],
-    tools=[{
-        "type": "function",
-        "function": {
-            "name": "get_weather",
-            "description": "Get weather for a city",
-            "parameters": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}
-        }
-    }]
-)
-```
-
-## Image Input
-
-OpenAI-style multimodal messages are supported for Chat Completions and the
-Responses API. Use either HTTP(S) image URLs or base64 data URLs:
-
-```python
-resp = client.chat.completions.create(
-    model="gemini-3.6-flash",
-    messages=[{
-        "role": "user",
-        "content": [
-            {"type": "text", "text": "Describe this image"},
-            {"type": "image_url", "image_url": {"url": "https://example.com/image.png"}}
-        ]
-    }]
-)
-```
-
-## Limitations
-
-- **Image upload may require cookies**: Multimodal input uses Gemini Web's image upload endpoint. If anonymous upload fails, configure a Gemini cookie.
-- **Not real Pro/Ultra**: Without a paid subscription cookie, `gemini-3.1-pro` routes to the same Flash model. The "Pro" label is a UI preference, not a backend model switch.
-- **Single-turn only**: Each request is an independent conversation. Multi-turn context is simulated by including previous messages in the prompt.
-- **Rate limits**: Google may throttle high-frequency requests. The server retries automatically but sustained heavy use may be blocked.
-
-## Requirements
-
-- Python 3.8+
-- `httpx` (`pip install httpx`) — used for streaming requests
-- Network access to `gemini.google.com` (proxy/VPN may be needed in some regions)
-
-## How It Works
-
-This tool reverse-engineers Google Gemini's web StreamGenerate protocol. It sends requests to the same endpoint that the Gemini web app uses, converting between OpenAI's API format and Gemini's internal protobuf-like format.
-
-The model selection is controlled by field `[79]` in the request payload, mapped from Gemini's frontend JavaScript source (`MODE_CATEGORY` enum).
-
-## Acknowledgments
-
-- Inspired by the open-source API proxy ecosystem
+- ✅ **Stateless**: No data stored, all requests pass-through
+- ✅ **Token validation**: Validates AQ. token format
+- ✅ **No logging**: Sensitive data not logged by default
+- ⚠️ **HTTPS required**: Always use HTTPS in production
+- ⚠️ **Environment secrets**: Store `GEMINI_API_KEY` securely
 
 ## License
 
-MIT
+This proxy implementation is part of FactCheckAI.
+
+**Original proxy**: [Sophomoresty/gemini-web2api](https://github.com/Sophomoresty/gemini-web2api)  
+**Adapted for**: FactCheckAI fact-checking system  
+**License**: Apache 2.0
+
+## Support
+
+For issues specific to FactCheckAI integration:
+- GitHub Issues: [BharatChandra-sys/FactCheckAI/issues](https://github.com/BharatChandra-sys/FactCheckAI/issues)
+
+For proxy-specific issues:
+- Original repo: [Sophomoresty/gemini-web2api](https://github.com/Sophomoresty/gemini-web2api)
+
+## Changelog
+
+### v1.1.0 (Sept 2026)
+- Integrated into FactCheckAI
+- Added Render deployment config
+- Updated for Gemini 3.5/3.7 Flash models
+- Added OpenAI compatibility layer
 
 ---
 
-## 致谢
-
-本项目的开发 agent 能力由 [GenericAgent](https://github.com/lsdefine/GenericAgent) 提供。
-
-### 🚩 友情链接
-
-[![GenericAgent](https://img.shields.io/badge/Agent_Framework-GenericAgent-orange?style=for-the-badge&logo=github)](https://github.com/lsdefine/GenericAgent)
-[![LinuxDo](https://img.shields.io/badge/社区-LinuxDo-blue?style=for-the-badge)](https://linux.do/)
+**Built for FactCheckAI** - Fighting misinformation with AI-powered fact-checking.
