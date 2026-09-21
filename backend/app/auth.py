@@ -4,7 +4,6 @@
 # Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 """
 Authentication utilities
-
 JWT token generation and validation for user authentication.
 """
 
