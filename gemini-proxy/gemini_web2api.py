@@ -1072,14 +1072,21 @@ def main():
 
     if args.port:
         CONFIG["port"] = args.port
+    elif os.getenv("PORT"):  # Render sets PORT automatically
+        CONFIG["port"] = int(os.getenv("PORT"))
     if args.cookie_file:
         CONFIG["cookie_file"] = args.cookie_file
     if args.proxy:
         CONFIG["proxy"] = args.proxy
 
-    new_bl = fetch_latest_bl()
-    if new_bl:
-        CONFIG["gemini_bl"] = new_bl
+    # Skip BL fetch on startup to speed up health check response
+    # BL will auto-update on first 405 error instead
+    if os.getenv("SKIP_BL_FETCH_ON_STARTUP", "false").lower() != "true":
+        new_bl = fetch_latest_bl()
+        if new_bl:
+            CONFIG["gemini_bl"] = new_bl
+        else:
+            log("BL fetch skipped or failed — using default from config")
 
     class ThreadedServer(ThreadingMixIn, HTTPServer):
         daemon_threads = True
