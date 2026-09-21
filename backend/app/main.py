@@ -118,7 +118,7 @@ async def lifespan(app: FastAPI):
     from sqlalchemy import text as _text
 
     _db_ok = False
-    for attempt in range(1, 6):
+    for attempt in range(1, 4):  # Reduced from 5 to 3 attempts
         try:
             with engine.connect() as _conn:
                 _conn.execute(_text("SELECT 1"))
@@ -126,12 +126,12 @@ async def lifespan(app: FastAPI):
             logger.info("Database connection verified (attempt %d)", attempt)
             break
         except Exception as e:
-            wait = attempt * 2  # 2s, 4s, 6s, 8s, 10s
+            wait = attempt  # Reduced from attempt*2: 1s, 2s, 3s instead of 2s, 4s, 6s, 8s, 10s
             logger.warning("DB connection attempt %d failed: %s — retrying in %ds", attempt, e, wait)
             _time.sleep(wait)
 
     if not _db_ok:
-        logger.error("Database unreachable after 5 attempts — check DATABASE_URL and Neon project status")
+        logger.error("Database unreachable after 3 attempts — check DATABASE_URL and Neon project status")
         # Don't crash — app can still serve health checks and static responses
 
     # ── Step 2: Create all tables from SQLAlchemy models ─────
