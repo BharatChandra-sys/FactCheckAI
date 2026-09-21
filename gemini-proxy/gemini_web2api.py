@@ -1081,12 +1081,14 @@ def main():
 
     # Skip BL fetch on startup to speed up health check response
     # BL will auto-update on first 405 error instead
-    if os.getenv("SKIP_BL_FETCH_ON_STARTUP", "false").lower() != "true":
+    if os.getenv("SKIP_BL_FETCH_ON_STARTUP", "false").lower() == "true":
+        log("Skipping BL fetch on startup (will auto-update on first 405)")
+    else:
         new_bl = fetch_latest_bl()
         if new_bl:
             CONFIG["gemini_bl"] = new_bl
         else:
-            log("BL fetch skipped or failed — using default from config")
+            log("BL fetch failed — using default from config")
 
     class ThreadedServer(ThreadingMixIn, HTTPServer):
         daemon_threads = True

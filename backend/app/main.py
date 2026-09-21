@@ -243,7 +243,7 @@ async def lifespan(app: FastAPI):
                For Render itself, configure UptimeRobot (free) to ping /health every 5 min.
             2. Every hour: check if training data collection should be triggered.
             """
-            _time.sleep(60)  # brief pause after startup
+            _time.sleep(5)  # brief pause after startup (reduced from 60s to 5s)
             last_collection_check = 0.0
 
             while True:
