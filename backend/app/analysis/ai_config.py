@@ -61,12 +61,25 @@ def discover_groq_models(api_key: str) -> List[str]:
         )
         if r.status_code == 200:
             models = [m["id"] for m in r.json().get("data", [])]
-            # Filter to chat models (exclude whisper, etc.)
-            models = [m for m in models if not any(x in m.lower() for x in ["whisper", "vision", "embed", "guard"])]
+            # Filter out problematic models
+            filtered = []
+            for m in models:
+                m_lower = m.lower()
+                # Exclude non-chat models
+                if any(x in m_lower for x in ["whisper", "vision", "embed", "guard"]):
+                    continue
+                # Exclude models requiring terms acceptance (canopylabs/orpheus-*)
+                if "canopylabs" in m or "orpheus" in m:
+                    continue
+                # Exclude oversized models (groq/compound is too large - 413 errors)
+                if "compound" in m:
+                    continue
+                filtered.append(m)
+            
             import time
-            _MODEL_CACHE[cache_key] = (time.time(), models)
-            logger.info(f"Discovered {len(models)} Groq models")
-            return models
+            _MODEL_CACHE[cache_key] = (time.time(), filtered)
+            logger.info(f"Discovered {len(filtered)} Groq models (filtered from {len(models)})")
+            return filtered
     except Exception as e:
         logger.warning(f"Groq model discovery failed: {e}")
     
@@ -118,10 +131,23 @@ def discover_gemini_models(api_key: str) -> List[str]:
             # Filter to generateContent models
             models = [m["name"].replace("models/", "") for m in all_models 
                      if "generateContent" in m.get("supportedGenerationMethods", [])]
+            
+            # Filter out invalid/broken model names
+            filtered = []
+            for m in models:
+                m_lower = m.lower()
+                # Exclude TTS models (wrong API endpoint)
+                if "tts" in m_lower or "text-to-speech" in m_lower:
+                    continue
+                # Exclude models with invalid naming patterns
+                if "gemini-2.5" in m_lower:  # 2.5 doesn't exist yet
+                    continue
+                filtered.append(m)
+            
             import time
-            _MODEL_CACHE[cache_key] = (time.time(), models)
-            logger.info(f"Discovered {len(models)} Gemini models")
-            return models
+            _MODEL_CACHE[cache_key] = (time.time(), filtered)
+            logger.info(f"Discovered {len(filtered)} Gemini models (filtered from {len(models)})")
+            return filtered
     except Exception as e:
         logger.warning(f"Gemini model discovery failed: {e}")
     

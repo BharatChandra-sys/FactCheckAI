@@ -192,7 +192,20 @@ def _call_openai_compat(url: str, key: str, model: str, text: str,
     
     # Log failures for debugging
     if r.status_code != 200:
-        logger.warning("%s failed: %s %s", model, r.status_code, r.text[:300])
+        error_detail = r.text[:300]
+        logger.warning("%s failed: %s %s", model, r.status_code, error_detail)
+        
+        # Check for specific error types
+        if r.status_code == 400:
+            # Check if model requires terms acceptance
+            if "terms" in error_detail.lower() or "accept" in error_detail.lower():
+                raise ValueError(f"Model {model} requires terms acceptance")
+        elif r.status_code == 402:
+            raise ValueError(f"Model {model} requires payment (quota exhausted)")
+        elif r.status_code == 413:
+            raise ValueError(f"Model {model} payload too large")
+        elif r.status_code == 404:
+            raise ValueError(f"Model {model} not found or unavailable")
     
     r.raise_for_status()
     raw = r.json()["choices"][0]["message"]["content"].strip()

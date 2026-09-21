@@ -287,9 +287,7 @@
     document.head.appendChild(style);
 
     popup.querySelector(".action-btn").addEventListener("click", () => {
-      chrome.storage.local.set({ selectedText: text, pendingAnalysis: true }, () => {
-        chrome.runtime.sendMessage({ type: "OPEN_POPUP_WITH_TEXT", text });
-      });
+      showInlineAIChat(text);
       removeQuickActionPopup();
       removeFloatingToolbar();
     });
@@ -327,6 +325,361 @@
       if (quickActionPopup?.parentNode) quickActionPopup.parentNode.removeChild(quickActionPopup);
       quickActionPopup = null;
     }, 250);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 💬 Inline AI Chat Panel
+  // ══════════════════════════════════════════════════════════
+  let inlineChat = null;
+  let chatMessages = [];
+
+  function createInlineAIChat(context) {
+    const chat = document.createElement("div");
+    chat.id = "__factcheck_inline_chat__";
+    chat.innerHTML = `
+      <div class="chat-header">
+        <div class="chat-branding">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2z"/>
+          </svg>
+          <span class="chat-title">FactCheck<span class="ai-text">AI</span></span>
+        </div>
+        <button class="chat-close" aria-label="Close chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="chat-context">
+        <div class="context-label">Selected context:</div>
+        <div class="context-text">${context.substring(0, 150)}${context.length > 150 ? '...' : ''}</div>
+      </div>
+      <div class="chat-messages" id="__factcheck_chat_messages__"></div>
+      <div class="chat-input-wrapper">
+        <input type="text" class="chat-input" placeholder="Ask about this content..." id="__factcheck_chat_input__" />
+        <button class="chat-send" aria-label="Send message">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </div>
+    `;
+
+    const style = document.createElement("style");
+    style.textContent = `
+      #__factcheck_inline_chat__ {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 420px;
+        max-height: 600px;
+        display: flex;
+        flex-direction: column;
+        background: rgba(16, 20, 25, 0.98);
+        backdrop-filter: blur(24px);
+        border-radius: 16px;
+        border: 1px solid rgba(192, 193, 255, 0.2);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 8px 24px rgba(0, 0, 0, 0.5);
+        z-index: 2147483645;
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: -apple-system, Inter, sans-serif;
+      }
+      #__factcheck_inline_chat__.visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      #__factcheck_inline_chat__ .chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        border-bottom: 1px solid rgba(192, 193, 255, 0.1);
+      }
+      #__factcheck_inline_chat__ .chat-branding {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #c0c1ff;
+      }
+      #__factcheck_inline_chat__ .chat-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #e8eaed;
+      }
+      #__factcheck_inline_chat__ .ai-text {
+        color: #f59e0b;
+      }
+      #__factcheck_inline_chat__ .chat-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        color: #9ca3af;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      #__factcheck_inline_chat__ .chat-close:hover {
+        background: rgba(192, 193, 255, 0.1);
+        color: #e8eaed;
+      }
+      #__factcheck_inline_chat__ .chat-context {
+        padding: 12px 16px;
+        background: rgba(192, 193, 255, 0.05);
+        border-bottom: 1px solid rgba(192, 193, 255, 0.1);
+      }
+      #__factcheck_inline_chat__ .context-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #c0c1ff;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+      #__factcheck_inline_chat__ .context-text {
+        font-size: 12px;
+        line-height: 1.5;
+        color: #9ca3af;
+      }
+      #__factcheck_inline_chat__ .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 200px;
+        max-height: 400px;
+      }
+      #__factcheck_inline_chat__ .chat-message {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        animation: messageSlideIn 0.3s ease;
+      }
+      @keyframes messageSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      #__factcheck_inline_chat__ .message-role {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      #__factcheck_inline_chat__ .message-role.user {
+        color: #c0c1ff;
+      }
+      #__factcheck_inline_chat__ .message-role.assistant {
+        color: #f59e0b;
+      }
+      #__factcheck_inline_chat__ .message-content {
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #e8eaed;
+      }
+      #__factcheck_inline_chat__ .message-content.user {
+        background: rgba(192, 193, 255, 0.15);
+        border: 1px solid rgba(192, 193, 255, 0.2);
+      }
+      #__factcheck_inline_chat__ .message-content.assistant {
+        background: rgba(30, 34, 40, 0.8);
+        border: 1px solid rgba(192, 193, 255, 0.1);
+      }
+      #__factcheck_inline_chat__ .message-content.loading {
+        color: #9ca3af;
+        font-style: italic;
+      }
+      #__factcheck_inline_chat__ .chat-input-wrapper {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        border-top: 1px solid rgba(192, 193, 255, 0.1);
+      }
+      #__factcheck_inline_chat__ .chat-input {
+        flex: 1;
+        padding: 10px 14px;
+        background: rgba(30, 34, 40, 0.8);
+        border: 1px solid rgba(192, 193, 255, 0.2);
+        border-radius: 8px;
+        color: #e8eaed;
+        font-size: 13px;
+        font-family: -apple-system, Inter, sans-serif;
+        outline: none;
+        transition: all 0.15s ease;
+      }
+      #__factcheck_inline_chat__ .chat-input:focus {
+        border-color: #c0c1ff;
+        box-shadow: 0 0 0 3px rgba(192, 193, 255, 0.1);
+      }
+      #__factcheck_inline_chat__ .chat-input::placeholder {
+        color: #6b7280;
+      }
+      #__factcheck_inline_chat__ .chat-send {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: linear-gradient(135deg, #c0c1ff 0%, #a8a9ff 100%);
+        color: #101419;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      #__factcheck_inline_chat__ .chat-send:hover {
+        background: linear-gradient(135deg, #a8a9ff 0%, #9091ff 100%);
+        box-shadow: 0 4px 16px rgba(192, 193, 255, 0.4);
+        transform: translateY(-1px);
+      }
+      #__factcheck_inline_chat__ .chat-send:active {
+        transform: scale(0.95);
+      }
+      #__factcheck_inline_chat__ .chat-send:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Event handlers
+    chat.querySelector(".chat-close").addEventListener("click", removeInlineAIChat);
+    
+    const input = chat.querySelector(".chat-input");
+    const sendBtn = chat.querySelector(".chat-send");
+    
+    const handleSend = async () => {
+      const message = input.value.trim();
+      if (!message) return;
+      
+      // Add user message
+      addChatMessage("user", message);
+      input.value = "";
+      sendBtn.disabled = true;
+      
+      // Add loading message
+      const loadingId = addChatMessage("assistant", "Analyzing...", true);
+      
+      try {
+        // Get API endpoint from config
+        const { getApiEndpoint } = await import(chrome.runtime.getURL("popup/config.js"));
+        const API_URL = getApiEndpoint();
+        
+        // Get auth token
+        const { token } = await chrome.storage.local.get("token");
+        
+        // Call chat API with context
+        const response = await fetch(`${API_URL}/chat/message`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { "Authorization": `Bearer ${token}` })
+          },
+          body: JSON.stringify({
+            message: message,
+            context: context,
+            session_id: null  // New conversation
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Remove loading message and add response
+        removeChatMessage(loadingId);
+        addChatMessage("assistant", data.response || "I couldn't analyze that. Please try again.");
+        
+      } catch (error) {
+        console.error("[FactCheckAI] Chat error:", error);
+        removeChatMessage(loadingId);
+        addChatMessage("assistant", "Sorry, I'm having trouble connecting. Please try again later.");
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    };
+    
+    sendBtn.addEventListener("click", handleSend);
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") handleSend();
+    });
+
+    document.body.appendChild(chat);
+    return chat;
+  }
+
+  function showInlineAIChat(context) {
+    if (inlineChat?.parentNode) {
+      inlineChat.parentNode.removeChild(inlineChat);
+    }
+    
+    chatMessages = [];
+    inlineChat = createInlineAIChat(context);
+    
+    // Animate in
+    setTimeout(() => {
+      inlineChat.classList.add("visible");
+      inlineChat.querySelector(".chat-input").focus();
+    }, 10);
+    
+    console.log("[FactCheckAI] Inline chat opened");
+  }
+
+  function removeInlineAIChat() {
+    if (!inlineChat) return;
+    inlineChat.classList.remove("visible");
+    setTimeout(() => {
+      if (inlineChat?.parentNode) {
+        inlineChat.parentNode.removeChild(inlineChat);
+      }
+      inlineChat = null;
+      chatMessages = [];
+    }, 300);
+  }
+
+  function addChatMessage(role, content, isLoading = false) {
+    const messagesContainer = document.getElementById("__factcheck_chat_messages__");
+    if (!messagesContainer) return;
+    
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "chat-message";
+    messageDiv.id = messageId;
+    messageDiv.innerHTML = `
+      <div class="message-role ${role}">${role === "user" ? "You" : "FactCheckAI"}</div>
+      <div class="message-content ${role} ${isLoading ? 'loading' : ''}">${content}</div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    chatMessages.push({ id: messageId, role, content });
+    return messageId;
+  }
+
+  function removeChatMessage(messageId) {
+    const messageEl = document.getElementById(messageId);
+    if (messageEl) {
+      messageEl.remove();
+      chatMessages = chatMessages.filter(m => m.id !== messageId);
+    }
   }
 
   // ══════════════════════════════════════════════════════════
