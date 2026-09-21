@@ -17,7 +17,7 @@
 
 // ── Backend URL (reads from storage if overridden in settings) ────────────────
 // Default points to production Render deployment
-let API_BASE = "https://fake-news-analyzer-j6ka.onrender.com";
+let API_BASE = "https://factcheckai-coq3.onrender.com";
 
 chrome.storage.local.get("apiBase", ({ apiBase }) => {
   if (apiBase) API_BASE = apiBase;
@@ -33,7 +33,7 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
   // Context menu
   chrome.contextMenus.create({
     id:       "analyze-fake-news",
-    title:    "🔍 TruthScan with FactCheckAI",
+    title:    "TruthScan with FactCheckAI",
     contexts: ["selection"],
   });
 

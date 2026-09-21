@@ -1,14 +1,14 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+// Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 // Review Queue â€” FactCheckAI
 // Self-contained: does not rely on any globals from config.js
 
 const _REVIEW_API = (function () {
-  // Try to use the API constant from config.js if available, else fallback
+  // Try to use the API constant from config.js if available, else fallback to production
   if (typeof API !== "undefined") return API;
-  return "http://127.0.0.1:8000";
+  return "https://factcheckai-coq3.onrender.com";
 })();
 
 async function _reviewFetch(path, opts = {}) {

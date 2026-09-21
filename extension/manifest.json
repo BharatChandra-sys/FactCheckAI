@@ -6,12 +6,9 @@
 
   "permissions": [
     "storage",
-    "activeTab",
     "contextMenus",
     "identity",
     "windows",
-    "scripting",
-    "tabs",
     "alarms",
     "notifications",
     "sidePanel"
