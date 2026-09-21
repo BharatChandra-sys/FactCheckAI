@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 import os
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -14,6 +14,8 @@ CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
 GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
 GEMINI_URL   = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 MINIMAX_URL  = "https://api.minimax.io/v1/chat/completions"
+# OpenRouter â€” FREE tier with multiple models
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 CHAT_SYSTEM = (
     "You are a helpful, knowledgeable assistant specializing in media literacy and fact-checking. "
@@ -34,10 +36,11 @@ CLAIM_DETECT_PROMPT = (
 
 def _get_keys():
     return {
-        "cerebras": os.getenv("CEREBRAS_API_KEY"),
-        "groq":     os.getenv("GROQ_API_KEY"),
-        "gemini":   os.getenv("GEMINI_API_KEY"),
-        "minimax":  os.getenv("MINIMAX_API_KEY"),
+        "cerebras":   os.getenv("CEREBRAS_API_KEY"),
+        "groq":       os.getenv("GROQ_API_KEY"),
+        "gemini":     os.getenv("GEMINI_API_KEY"),
+        "minimax":    os.getenv("MINIMAX_API_KEY"),
+        "openrouter": os.getenv("OPENROUTER_API_KEY"),
     }
 
 
@@ -117,6 +120,9 @@ def is_claim(text: str) -> bool:
     keys = _get_keys()
 
     fns = []
+    # Prioritize FREE providers
+    if keys["openrouter"]:
+        fns.append(("OpenRouter", lambda: _call_openai_compat(OPENROUTER_URL, keys["openrouter"], "google/gemma-2-9b-it:free", messages, max_tokens=5, temperature=0)))
     # Try Groq with updated model names
     if keys["groq"]:
         # Updated Groq models (llama3-8b-8192 was decommissioned)
@@ -153,6 +159,9 @@ def run_chat(message: str, history: list) -> str:
 
     keys = _get_keys()
     fns = []
+    # Prioritize FREE providers
+    if keys["openrouter"]:
+        fns.append(("OpenRouter", lambda: _call_openai_compat(OPENROUTER_URL, keys["openrouter"], "google/gemma-2-9b-it:free", msgs)))
     # Try Groq with updated model names (old models decommissioned)
     if keys["groq"]:
         for model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]:

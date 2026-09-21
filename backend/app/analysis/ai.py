@@ -20,13 +20,15 @@ _POOL = ThreadPoolExecutor(max_workers=5, thread_name_prefix="ai-provider")
 
 CEREBRAS_URL  = "https://api.cerebras.ai/v1/chat/completions"
 GROQ_URL      = "https://api.groq.com/openai/v1/chat/completions"
-GEMINI_URL    = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GEMINI_URL    = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent"
 # MiniMax M2.7 — 229B MoE, recursive self-improvement, SOTA real-world engineering
 # OpenAI-compatible endpoint. Falls back to M2.7-highspeed for lower latency.
 MINIMAX_URL   = "https://api.minimax.io/v1/chat/completions"
 # Gemma 4 31B-it — Google's latest open model, 256K context, reasoning mode
 # Uses the same Google AI Studio key as Gemini (GEMINI_API_KEY)
 GEMMA4_MODEL  = "gemma-4-31B-it"
+# OpenRouter — FREE tier with multiple models (Google Gemma 2 9B, Meta Llama 3.1 8B, etc)
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # ── Structured JSON prompt ────────────────────────────────────
 SYSTEM_PROMPT = """You are a professional fact-checker. Analyze the given claim and respond with ONLY a JSON object — no markdown, no extra text.
@@ -52,10 +54,12 @@ def _get_keys() -> dict:
     global _KEYS
     if _KEYS is None:
         _KEYS = {
-            "cerebras": os.getenv("CEREBRAS_API_KEY"),
-            "groq":     os.getenv("GROQ_API_KEY"),
-            "gemini":   os.getenv("GEMINI_API_KEY"),
-            "minimax":  os.getenv("MINIMAX_API_KEY"),
+            "cerebras":     os.getenv("CEREBRAS_API_KEY"),
+            "groq":         os.getenv("GROQ_API_KEY"),
+            "gemini":       os.getenv("GEMINI_API_KEY"),
+            "minimax":      os.getenv("MINIMAX_API_KEY"),
+            "openrouter":   os.getenv("OPENROUTER_API_KEY"),
+            "gemini_proxy": os.getenv("GEMINI_WEB2API_URL", "http://localhost:3000"),  # Web2API proxy URL
         }
     return _KEYS
 
@@ -79,22 +83,33 @@ def _verdict_to_score(verdict: str) -> float:
 
 
 def _call_openai_compat(url: str, key: str, model: str, text: str,
-                         timeout: int = 12, max_tokens: int = 300) -> dict:
+                         timeout: int = 12, max_tokens: int = 500) -> dict:
     """Shared helper for OpenAI-compatible chat completion endpoints."""
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user",   "content": f"Claim: {text}"}
+        ],
+        "temperature": 0.1,
+        "max_tokens": max_tokens,
+    }
+    
+    # Disable reasoning mode for reasoning models to avoid token waste
+    if "gpt-oss" in model or "qwen" in model:
+        payload["reasoning_effort"] = "none"
+    
     r = requests.post(
         url,
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-        json={
-            "model": model,
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": f"Claim: {text}"}
-            ],
-            "temperature": 0.1,
-            "max_tokens": max_tokens,
-        },
+        json=payload,
         timeout=timeout,
     )
+    
+    # Log failures for debugging
+    if r.status_code != 200:
+        logger.warning("%s failed: %s %s", model, r.status_code, r.text[:300])
+    
     r.raise_for_status()
     raw = r.json()["choices"][0]["message"]["content"].strip()
     return _parse_structured(raw)
@@ -104,8 +119,8 @@ def _call_cerebras(text: str) -> dict:
     key = _get_keys()["cerebras"]
     if not key:
         raise ValueError("Cerebras API key missing")
-    # Try updated Cerebras model names
-    for model in ["llama-3.3-70b", "llama3.1-70b", "llama3.1-8b"]:
+    # Current Cerebras models (Sept 2026)
+    for model in ["gpt-oss-120b", "qwen-3-235b-a22b-instruct-2507", "zai-glm-4.7"]:
         try:
             return _call_openai_compat(CEREBRAS_URL, key, model, text)
         except Exception:
@@ -117,30 +132,77 @@ def _call_groq(text: str) -> dict:
     key = _get_keys()["groq"]
     if not key:
         raise ValueError("Groq API key missing")
-    # Updated model name - old llama3-8b-8192 was decommissioned
-    return _call_openai_compat(GROQ_URL, key, "llama-3.3-70b-versatile", text)
+    # Current Groq models (Sept 2026) - old llama-3.3-70b-versatile deprecated Aug 16, 2026
+    for model in ["openai/gpt-oss-120b", "qwen/qwen3.6-27b"]:
+        try:
+            return _call_openai_compat(GROQ_URL, key, model, text)
+        except Exception:
+            continue
+    raise ValueError("All Groq models failed")
 
 
 def _call_gemini(text: str) -> dict:
+    """
+    Gemini via web2api proxy (supports AQ. session tokens).
+    Falls back to standard API if proxy unavailable.
+    """
     key = _get_keys()["gemini"]
+    proxy_url = _get_keys()["gemini_proxy"]
+    
     if not key:
         raise ValueError("Gemini API key missing")
+    
     prompt = f"{SYSTEM_PROMPT}\n\nClaim: {text}"
-    r = requests.post(
-        f"{GEMINI_URL}?key={key}",
-        headers={"Content-Type": "application/json"},
-        json={
-            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 300}
-        },
-        timeout=12
-    )
-    # Handle quota errors gracefully
-    if r.status_code == 429:
-        raise ValueError("Gemini quota exhausted")
-    r.raise_for_status()
-    raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-    return _parse_structured(raw)
+    
+    # Try web2api proxy first (supports AQ. tokens)
+    if proxy_url and key.startswith("AQ."):
+        try:
+            r = requests.post(
+                f"{proxy_url}/v1/chat/completions",  # OpenAI-compatible endpoint
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {key}"
+                },
+                json={
+                    "model": "gemini-3.5-flash",
+                    "messages": [
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": f"Claim: {text}"}
+                    ],
+                    "temperature": 0.1,
+                    "max_tokens": 300
+                },
+                timeout=15
+            )
+            if r.status_code == 200:
+                raw = r.json()["choices"][0]["message"]["content"].strip()
+                return _parse_structured(raw)
+            logger.warning(f"Web2API proxy returned {r.status_code}: {r.text[:200]}")
+        except requests.exceptions.ConnectionError:
+            logger.warning("Web2API proxy not running at %s", proxy_url)
+        except Exception as e:
+            logger.warning("Web2API proxy error: %s", e)
+    
+    # Standard Gemini API (for AIzaSy keys) - gemini-3.5-flash is current as of Sept 2026
+    if not key.startswith("AQ."):
+        r = requests.post(
+            f"{GEMINI_URL}?key={key}",
+            headers={"Content-Type": "application/json"},
+            json={
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.1, "maxOutputTokens": 300}
+            },
+            timeout=12
+        )
+        if r.status_code == 429:
+            raise ValueError("Gemini quota exhausted")
+        if r.status_code != 200:
+            logger.warning("Gemini failed: %s %s", r.status_code, r.text[:300])
+        r.raise_for_status()
+        raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+        return _parse_structured(raw)
+    
+    raise ValueError("Gemini web2api proxy not available and token format requires proxy")
 
 
 def _call_minimax(text: str) -> dict:
@@ -173,8 +235,8 @@ def _call_gemma4(text: str) -> dict:
     if not key:
         raise ValueError("Gemini/Gemma API key missing")
     prompt = f"{SYSTEM_PROMPT}\n\nClaim: {text}"
-    # Try newest Gemma 4 first, then Gemma 3 27B, then Gemini Flash as last resort
-    for model in ["gemma-4-31b-it", "gemma-3-27b-it", "gemini-1.5-flash"]:
+    # Try newest Gemma 4 first, then Gemma 3 27B, then Gemini 3.5 Flash (current as of Sept 2026)
+    for model in ["gemma-4-31b-it", "gemma-3-27b-it", "gemini-3.5-flash"]:
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
             r = requests.post(
@@ -189,12 +251,63 @@ def _call_gemma4(text: str) -> dict:
                 },
                 timeout=15
             )
+            if r.status_code != 200:
+                logger.warning("Gemma/Gemini model %s failed: %s", model, r.status_code)
+                continue
             r.raise_for_status()
             raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
             return _parse_structured(raw)
         except Exception:
             continue
-    raise ValueError("Gemma 4 31B / Gemma 3 27B / Gemini Flash all failed")
+    raise ValueError("Gemma 4 31B / Gemma 3 27B / Gemini 3.5 Flash all failed")
+
+
+def _call_openrouter(text: str) -> dict:
+    """
+    OpenRouter — FREE tier with access to multiple free models.
+    Uses Google Gemma 2 9B (free, no credit card).
+    Get free key at: https://openrouter.ai/keys
+    """
+    key = _get_keys()["openrouter"]
+    if not key:
+        raise ValueError("OpenRouter API key missing")
+    # Try free models on OpenRouter
+    for model in ["google/gemma-2-9b-it:free", "meta-llama/llama-3.1-8b-instruct:free"]:
+        try:
+            return _call_openai_compat(OPENROUTER_URL, key, model, text)
+        except Exception:
+            continue
+    raise ValueError("All OpenRouter free models failed")
+
+
+def _call_huggingface(text: str) -> dict:
+    """
+    HuggingFace Inference API — 100% FREE, works without API key for public models.
+    Uses Meta Llama 3.2 3B Instruct (small but capable).
+    Optional: Get token at https://huggingface.co/settings/tokens for higher rate limits.
+    """
+    token = _get_keys().get("huggingface", "")
+    prompt = f"{SYSTEM_PROMPT}\n\nClaim: {text}"
+    
+    headers = {"Content-Type": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
+    try:
+        r = requests.post(
+            HUGGINGFACE_URL,
+            headers=headers,
+            json={"inputs": prompt, "parameters": {"max_new_tokens": 300, "temperature": 0.1}},
+            timeout=20  # HF can be slow on first request (model loading)
+        )
+        r.raise_for_status()
+        raw = r.json()[0]["generated_text"]
+        # Extract only the model's response (remove the prompt)
+        if prompt in raw:
+            raw = raw.replace(prompt, "").strip()
+        return _parse_structured(raw)
+    except Exception as e:
+        raise ValueError(f"HuggingFace inference failed: {str(e)}")
 
 
 def _ensemble_vote(results: List[dict]) -> dict:
@@ -202,8 +315,9 @@ def _ensemble_vote(results: List[dict]) -> dict:
     Weighted ensemble voting across multiple LLM verdicts.
     
     Weights by model capability tier:
-    - MiniMax M1 (reasoning model): 2.0x
-    - Gemma 4 31B (large reasoning): 1.8x
+    - MiniMax M2.7 (229B reasoning): 2.5x
+    - Gemma 4 31B (reasoning mode): 2.0x
+    - OpenRouter Gemma 2 9B: 1.3x
     - Gemini 2.0 Flash: 1.2x
     - Groq / Cerebras (8B models): 1.0x
     
@@ -216,11 +330,12 @@ def _ensemble_vote(results: List[dict]) -> dict:
         return results[0]
 
     weights = {
-        "minimax":  2.5,   # MiniMax M2.7 — 229B, SOTA real-world engineering
-        "gemma4":   2.0,   # Gemma 4 31B — 256K ctx, reasoning mode
-        "gemini":   1.2,   # Gemini 2.0 Flash
-        "groq":     1.0,   # Llama 3 8B via Groq
-        "cerebras": 1.0,   # Llama 3.1 8B via Cerebras
+        "minimax":    2.5,   # MiniMax M2.7 — 229B, SOTA real-world engineering
+        "gemma4":     2.0,   # Gemma 4 31B — 256K ctx, reasoning mode
+        "openrouter": 1.3,   # OpenRouter Gemma 2 9B — FREE
+        "gemini":     1.2,   # Gemini 2.0 Flash
+        "groq":       1.0,   # Llama 3 8B via Groq
+        "cerebras":   1.0,   # Llama 3.1 8B via Cerebras
     }
 
     vote_scores = {"fake": 0.0, "real": 0.0, "uncertain": 0.0}
@@ -261,6 +376,9 @@ def _run_all_parallel(text: str):
     keys = _get_keys()
     providers = []
 
+    # Add free providers (prioritize those that work)
+    if keys["openrouter"]:
+        providers.append(("openrouter", _call_openrouter))
     if keys["cerebras"]:
         providers.append(("cerebras", _call_cerebras))
     if keys["groq"]:
@@ -306,11 +424,7 @@ def run_ai_analysis(text: str):
     Runs all configured LLM providers in parallel (Cerebras, Groq, Gemini,
     Gemma 4 31B-it, MiniMax M2.7) and returns an ensemble-voted verdict.
 
-    Ensemble voting weights larger/reasoning models more heavily:
-    - MiniMax M2.7 (229B MoE, recursive self-improvement): 2.5x weight
-    - Gemma 4 31B-it (Google, 256K ctx, reasoning mode):   2.0x weight
-    - Gemini 2.0 Flash:                                    1.2x weight
-    - Groq / Cerebras (8B models):                         1.0x weight
+    If NO AI providers are available, falls back to rule-based analysis.
 
     Returns: (ai_fake_score: float | None, explanation: str)
     """
@@ -326,36 +440,72 @@ def run_ai_analysis(text: str):
 
     successes, errors = _run_all_parallel(text)
 
-    if not successes:
-        error_summary = " | ".join(f"{k}: {v}" for k, v in errors.items())
-        return None, f"AI analysis unavailable. {error_summary}"
+    # If AI providers available, use them
+    if successes:
+        ensemble = _ensemble_vote(successes)
+        verdict = ensemble.get("verdict", "uncertain")
+        llm_conf = float(ensemble.get("confidence", 0.5))
+        explanation = ensemble.get("explanation", "")
 
-    # Ensemble vote across all successful responses
-    ensemble = _ensemble_vote(successes)
+        # Convert verdict → fake probability score
+        score = _verdict_to_score(verdict)
+        if verdict == "fake":
+            score = max(score, llm_conf * 0.95)
+        elif verdict == "real":
+            score = min(score, 1.0 - llm_conf * 0.95)
 
-    verdict = ensemble.get("verdict", "uncertain")
-    llm_conf = float(ensemble.get("confidence", 0.5))
-    explanation = ensemble.get("explanation", "")
+        logger.info(
+            "AI ensemble: verdict=%s conf=%.2f score=%.3f providers=%s errors=%s",
+            verdict, llm_conf, score,
+            [r.get("_source") for r in successes],
+            list(errors.keys()) if errors else "none"
+        )
 
-    # Convert verdict → fake probability score, blended with ensemble confidence
-    score = _verdict_to_score(verdict)
-    if verdict == "fake":
-        score = max(score, llm_conf * 0.95)
-    elif verdict == "real":
-        score = min(score, 1.0 - llm_conf * 0.95)
+        # Cache the result
+        try:
+            from app.cache import partial_cache
+            partial_cache.set_ai_score(text, score, explanation)
+        except Exception as e:
+            logger.debug("Cache set failed: %s", e)
 
-    logger.info(
-        "AI ensemble: verdict=%s conf=%.2f score=%.3f providers=%s errors=%s",
-        verdict, llm_conf, score,
-        [r.get("_source") for r in successes],
-        list(errors.keys()) if errors else "none"
+        return score, explanation
+
+    # FALLBACK: NO AI PROVIDERS AVAILABLE
+    # Use rule-based analysis as fallback
+    logger.warning("No AI providers available, using rule-based fallback")
+    
+    # Simple rule-based fake news indicators
+    text_lower = text.lower()
+    fake_score = 0.5  # Start neutral
+    indicators = []
+    
+    # Sensational keywords (increase fake score)
+    sensational = ["shocking", "unbelievable", "you won't believe", "doctors hate", 
+                   "miracle", "secret they don't want", "breaking", "exclusive"]
+    for word in sensational:
+        if word in text_lower:
+            fake_score += 0.05
+            indicators.append(f"sensational language: '{word}'")
+    
+    # All caps words (often clickbait)
+    caps_words = [w for w in text.split() if w.isupper() and len(w) > 2]
+    if len(caps_words) > 2:
+        fake_score += 0.1
+        indicators.append(f"{len(caps_words)} all-caps words")
+    
+    # Emotional manipulation
+    emotional = ["outraged", "furious", "devastated", "terrified", "horrified"]
+    for word in emotional:
+        if word in text_lower:
+            fake_score += 0.05
+            indicators.append(f"emotional manipulation: '{word}'")
+    
+    # Clamp score to [0.3, 0.7] - rule-based shouldn't be too confident
+    fake_score = max(0.3, min(0.7, fake_score))
+    
+    explanation = (
+        f"AI analysis unavailable. Rule-based detection found: {', '.join(indicators) if indicators else 'no strong indicators'}. "
+        f"Recommendation: Verify with trusted sources."
     )
-
-    # Cache the result
-    try:
-        from app.cache import partial_cache
-        partial_cache.set_ai_score(text, score, explanation)
-    except Exception as e:
-        logger.debug("Cache set failed: %s", e)
-
-    return score, explanation
+    
+    return fake_score, explanation
