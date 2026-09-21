@@ -145,26 +145,30 @@ async def lifespan(app: FastAPI):
     # ── Step 3: Run Alembic migrations ───────────────────────
     # Runs on every deploy — no-op if already at head
     # Adds new columns/indexes without dropping existing data
-    try:
-        import subprocess, sys
-        alembic_ini = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "alembic.ini")
-        if os.path.exists(alembic_ini):
-            result = subprocess.run(
-                [sys.executable, "-m", "alembic", "-c", alembic_ini, "upgrade", "head"],
-                capture_output=True, text=True, timeout=120,
-                env={**os.environ, "PYTHONUNBUFFERED": "1"},
-            )
-            if result.returncode == 0:
-                out = result.stdout.strip() or "already at head"
-                logger.info("Alembic migrations: %s", out)
+    # Skip if DATABASE_URL not set (local dev mode)
+    if os.getenv("DATABASE_URL"):
+        try:
+            import subprocess, sys
+            alembic_ini = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "alembic.ini")
+            if os.path.exists(alembic_ini):
+                result = subprocess.run(
+                    [sys.executable, "-m", "alembic", "-c", alembic_ini, "upgrade", "head"],
+                    capture_output=True, text=True, timeout=60,  # Reduced from 120s to 60s
+                    env={**os.environ, "PYTHONUNBUFFERED": "1"},
+                )
+                if result.returncode == 0:
+                    out = result.stdout.strip() or "already at head"
+                    logger.info("Alembic migrations: %s", out)
+                else:
+                    logger.warning("Alembic migration warning: %s", result.stderr.strip())
             else:
-                logger.warning("Alembic migration warning: %s", result.stderr.strip())
-        else:
-            logger.debug("alembic.ini not found — skipping Alembic (SQLite dev mode)")
-    except subprocess.TimeoutExpired:
-        logger.error("Alembic migration timed out after 120s")
-    except Exception as e:
-        logger.warning("Alembic migration failed: %s — tables already created via create_all", e)
+                logger.debug("alembic.ini not found — skipping Alembic (SQLite dev mode)")
+        except subprocess.TimeoutExpired:
+            logger.error("Alembic migration timed out after 60s — skipping")
+        except Exception as e:
+            logger.warning("Alembic migration failed: %s — tables already created via create_all", e)
+    else:
+        logger.info("DATABASE_URL not set — skipping Alembic (local dev mode)")
 
     # ── Step 4: Verify critical tables exist ─────────────────
     # Belt-and-suspenders check: log any model table that's missing from DB
