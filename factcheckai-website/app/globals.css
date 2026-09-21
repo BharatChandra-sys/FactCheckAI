@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@theme {
+  /* FactCheckAI Brand Colors */
+  --color-surface-tint: #c0c1ff;
+  --color-secondary: #62dcad;
+  --color-tertiary: #ffe083;
+  --color-surface: #101419;
+  --color-surface-dim: #0a0f13;
+  --color-surface-container: #1c2025;
+  --color-surface-container-low: #181c21;
+  --color-surface-container-high: #262a30;
+  --color-surface-container-highest: #31353a;
+  --color-surface-container-lowest: #0a0f13;
+  --color-on-primary: #292b5e;
+  --color-on-secondary: #003827;
+  --color-on-tertiary: #3c2f00;
+  --color-on-surface: #e0e2e9;
+  --color-on-surface-variant: #c7c5d0;
+  --color-primary: #e1dfff;
+  --color-primary-container: #c0c1ff;
+  --color-on-primary-fixed: #131449;
+  --color-secondary-container: #18a479;
+  --color-tertiary-container: #eac23d;
+  --color-error: #ffb4ab;
+  --color-error-container: #93000a;
+  --color-on-error: #690005;
+  --color-outline: #918f9a;
+  --color-outline-variant: #46464f;
+  --color-background: #101419;
+  --color-on-background: #e0e2e9;
+  --color-ai-orange: #f59e0b;
+  
+  --font-family-sans: var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
+  --font-family-mono: var(--font-ibm-plex-mono), 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+@layer base {
+  html, body {
+    background: #101419;
+    color: #e0e2e9;
+    margin: 0;
+    padding: 0;
+    overscroll-behavior: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #181c21;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #46464f;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #918f9a;
+  }
+
+  ::selection {
+    background-color: #c0c1ff;
+    color: #101419;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #e0e2e9;
+  }
+
+  a {
+    transition: color 0.2s;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .glass-morphism {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+}
