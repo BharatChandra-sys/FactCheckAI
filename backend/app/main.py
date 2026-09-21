@@ -196,6 +196,22 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("TF-IDF preload failed: %s", e)
 
+    # ── Warm up AI model discovery cache ──────────────────────
+    # Pre-fetches available models from Groq, Cerebras, Gemini.
+    # Runs in background thread so it doesn't block startup.
+    try:
+        import threading
+        def _warmup():
+            try:
+                from app.analysis.ai_config import warmup_model_cache
+                warmup_model_cache()
+            except Exception as e:
+                logger.warning("Model cache warmup failed: %s", e)
+        threading.Thread(target=_warmup, daemon=True, name="model-cache-warmup").start()
+        logger.info("Model cache warmup started in background")
+    except Exception as e:
+        logger.warning("Could not start model cache warmup: %s", e)
+
     # ── Train TF-IDF if no model file exists ──────────────────
     if os.getenv("SKIP_TRAIN_ON_STARTUP", "false").lower() != "true":
         model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "model.joblib")

@@ -38,6 +38,10 @@ services:
         sync: false
       - key: GEMINI_API_KEY
         sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GEMINI_WEB2API_URL
+        value: "https://factcheckai-gemini-proxy.onrender.com"
       - key: TAVILY_API_KEY
         sync: false
       - key: NEWS_API_KEY

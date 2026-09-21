@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 Multi-language Support â€” PiNE AI
 
@@ -148,7 +148,7 @@ def detect_language(text: str) -> str:
 
 def translate_to_english(text: str, source_lang: str = "auto") -> Tuple[str, str]:
     """
-    Translate text to English using available LLM.
+    Translate text to English using available LLM (dynamic model discovery).
 
     Returns:
         (translated_text, source_language_name)
@@ -159,20 +159,38 @@ def translate_to_english(text: str, source_lang: str = "auto") -> Tuple[str, str
 
     try:
         from app.analysis.chat import _call_openai_compat, _call_gemini, _get_keys, _first_success
+        from app.analysis.ai_config import discover_groq_models, discover_cerebras_models, GROQ_URL, CEREBRAS_URL
+        
         keys = _get_keys()
         fns = []
+        
+        # Try Gemini first (best for translation)
         if keys.get("gemini"):
             fns.append(("Gemini", lambda: _call_gemini(messages, max_tokens=500, temperature=0)))
+            
+        # Try Groq with dynamic model discovery
         if keys.get("groq"):
-            fns.append(("Groq", lambda: _call_openai_compat(
-                "https://api.groq.com/openai/v1/chat/completions",
-                keys["groq"], "llama-3.3-70b-versatile", messages, max_tokens=500, temperature=0
-            )))
+            groq_models = discover_groq_models(keys["groq"])
+            for model in groq_models[:2]:
+                try:
+                    fns.append((f"Groq-{model}", lambda m=model: _call_openai_compat(
+                        GROQ_URL,
+                        keys["groq"], m, messages, max_tokens=500, temperature=0
+                    )))
+                except Exception:
+                    continue
+                    
+        # Try Cerebras with dynamic model discovery
         if keys.get("cerebras"):
-            fns.append(("Cerebras", lambda: _call_openai_compat(
-                "https://api.cerebras.ai/v1/chat/completions",
-                keys["cerebras"], "llama3.1-8b", messages, max_tokens=500, temperature=0
-            )))
+            cerebras_models = discover_cerebras_models(keys["cerebras"])
+            for model in cerebras_models[:2]:
+                try:
+                    fns.append((f"Cerebras-{model}", lambda m=model: _call_openai_compat(
+                        CEREBRAS_URL,
+                        keys["cerebras"], m, messages, max_tokens=500, temperature=0
+                    )))
+                except Exception:
+                    continue
 
         if fns:
             translated = _first_success(fns)

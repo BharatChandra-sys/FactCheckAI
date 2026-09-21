@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 def _get_gemini_key():
     return os.getenv("GEMINI_API_KEY")
 
-GEMINI_VISION_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-GEMINI_VISION_FALLBACK_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent"
+# Import dynamic Gemini model discovery
+from app.analysis.ai_config import discover_gemini_models, GEMINI_URL_BASE
 
 # Simple rate limiter — track last vision call time to avoid 429
 import threading
@@ -58,8 +58,22 @@ def _gemini_vision_base64(mime_type: str, b64_data: str, prompt: str) -> dict:
 
     import time
     _wait_for_rate_limit()
-    url = GEMINI_VISION_URL
+    
+    # Discover available Gemini models dynamically
+    models = discover_gemini_models(GEMINI_KEY)
+    if not models:
+        models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"]
+    
+    # Filter to vision-capable models (exclude audio, etc.)
+    vision_models = [m for m in models if not any(x in m.lower() for x in ["audio", "embed"])]
+    if not vision_models:
+        vision_models = models  # Fallback to all models
+    
     for attempt in range(3):
+        # Rotate models on retry
+        model = vision_models[min(attempt, len(vision_models)-1)]
+        url = f"{GEMINI_URL_BASE}/{model}:generateContent"
+        
         try:
             r = _session.post(
                 f"{url}?key={GEMINI_KEY}",
@@ -78,18 +92,19 @@ def _gemini_vision_base64(mime_type: str, b64_data: str, prompt: str) -> dict:
                 wait = 2 ** attempt
                 logger.warning("Gemini Vision 429 rate limit, retrying in %ss (attempt %d/3)", wait, attempt + 1)
                 time.sleep(wait)
-                if attempt >= 1:
-                    url = GEMINI_VISION_FALLBACK_URL
                 continue
             if r.status_code != 200:
                 logger.warning("Gemini Vision returned %s: %s", r.status_code, r.text[:300])
+                if attempt < 2:
+                    time.sleep(2 ** attempt)
+                    continue
                 return {"available": False, "reason": f"HTTP {r.status_code}: {r.text[:100]}"}
 
             text = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-            logger.info("Gemini Vision success, description length=%d", len(text))
+            logger.info("Gemini Vision success with %s, description length=%d", model, len(text))
             return {"available": True, "description": text}
         except Exception as e:
-            logger.warning("Gemini Vision failed (attempt %d): %s", attempt + 1, e)
+            logger.warning("Gemini Vision failed with %s (attempt %d): %s", model, attempt + 1, e)
             if attempt < 2:
                 time.sleep(2 ** attempt)
 
@@ -101,9 +116,17 @@ def _gemini_vision_url(image_url: str, prompt: str) -> dict:
     GEMINI_KEY = _get_gemini_key()
     if not GEMINI_KEY:
         return {"available": False, "reason": "No Gemini API key"}
+    
+    # Get first available Gemini model
+    models = discover_gemini_models(GEMINI_KEY)
+    if not models:
+        models = ["gemini-1.5-flash"]
+    model = models[0]
+    url = f"{GEMINI_URL_BASE}/{model}:generateContent"
+    
     try:
         r = _session.post(
-            f"{GEMINI_VISION_URL}?key={GEMINI_KEY}",
+            f"{url}?key={GEMINI_KEY}",
             json={
                 "contents": [{
                     "parts": [

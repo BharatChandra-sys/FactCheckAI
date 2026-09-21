@@ -46,8 +46,10 @@ Rules:
 - explanation must be factual, calm, and natural — no AI disclaimers
 - Do NOT include markdown fences or any text outside the JSON"""
 
-# ── Cached API keys (lazy init) ───────────────────────────────
+# ── Cached API keys and models (lazy init) ──────────────────
 _KEYS: Optional[dict] = None
+_MODEL_CACHE: dict = {}  # Cache discovered models: {provider: [model_list]}
+_CACHE_TTL = 3600  # Cache models for 1 hour
 
 
 def _get_keys() -> dict:
@@ -59,9 +61,91 @@ def _get_keys() -> dict:
             "gemini":       os.getenv("GEMINI_API_KEY"),
             "minimax":      os.getenv("MINIMAX_API_KEY"),
             "openrouter":   os.getenv("OPENROUTER_API_KEY"),
-            "gemini_proxy": os.getenv("GEMINI_WEB2API_URL", "http://localhost:3000"),  # Web2API proxy URL
+            "gemini_proxy": os.getenv("GEMINI_WEB2API_URL", "https://factcheckai-gemini-proxy.onrender.com"),
         }
     return _KEYS
+
+
+def _discover_models(provider: str, api_url: str, api_key: str, timeout: int = 10) -> List[str]:
+    """
+    Dynamically discover available models from a provider.
+    Returns list of model IDs, caching results for 1 hour.
+    """
+    import time
+    
+    # Check cache first
+    cache_key = f"{provider}_{int(time.time() // _CACHE_TTL)}"
+    if cache_key in _MODEL_CACHE:
+        return _MODEL_CACHE[cache_key]
+    
+    models = []
+    
+    try:
+        if provider == "groq":
+            # Groq: GET /openai/v1/models
+            r = requests.get(
+                "https://api.groq.com/openai/v1/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=timeout
+            )
+            if r.status_code == 200:
+                models = [m["id"] for m in r.json().get("data", [])]
+                # Filter to chat models only
+                models = [m for m in models if not any(x in m.lower() for x in ["whisper", "vision", "embed"])]
+        
+        elif provider == "cerebras":
+            # Cerebras: GET /v1/models
+            r = requests.get(
+                "https://api.cerebras.ai/v1/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=timeout
+            )
+            if r.status_code == 200:
+                models = [m["id"] for m in r.json().get("data", [])]
+        
+        elif provider == "openrouter":
+            # OpenRouter: GET /api/v1/models
+            r = requests.get(
+                "https://openrouter.ai/api/v1/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=timeout
+            )
+            if r.status_code == 200:
+                # Filter to free models only
+                all_models = r.json().get("data", [])
+                models = [m["id"] for m in all_models if m.get("pricing", {}).get("prompt", "0") == "0"]
+        
+        elif provider == "gemini":
+            # Gemini: GET /v1beta/models
+            r = requests.get(
+                "https://generativelanguage.googleapis.com/v1beta/models",
+                params={"key": api_key},
+                timeout=timeout
+            )
+            if r.status_code == 200:
+                all_models = r.json().get("models", [])
+                # Filter to generateContent models only
+                models = [m["name"].replace("models/", "") for m in all_models 
+                         if "generateContent" in m.get("supportedGenerationMethods", [])]
+        
+        elif provider == "gemini_proxy":
+            # Gemini Proxy: GET /v1/models
+            r = requests.get(
+                f"{api_url}/v1/models",
+                timeout=timeout
+            )
+            if r.status_code == 200:
+                models = [m["id"] for m in r.json().get("data", [])]
+        
+        # Cache the discovered models
+        if models:
+            _MODEL_CACHE[cache_key] = models
+            logger.info(f"Discovered {len(models)} models from {provider}: {models[:3]}...")
+    
+    except Exception as e:
+        logger.warning(f"Model discovery failed for {provider}: {e}")
+    
+    return models
 
 
 def _parse_structured(raw: str) -> dict:
@@ -119,12 +203,22 @@ def _call_cerebras(text: str) -> dict:
     key = _get_keys()["cerebras"]
     if not key:
         raise ValueError("Cerebras API key missing")
-    # Current Cerebras models (Sept 2026)
-    for model in ["gpt-oss-120b", "qwen-3-235b-a22b-instruct-2507", "zai-glm-4.7"]:
+    
+    # Try to discover available models
+    models = _discover_models("cerebras", CEREBRAS_URL, key)
+    
+    # Fallback to known models if discovery fails
+    if not models:
+        models = ["llama-3.3-70b-specdec", "llama-3.1-70b-versatile", "llama-3.1-8b-instant"]
+    
+    # Try each model until one works
+    for model in models:
         try:
             return _call_openai_compat(CEREBRAS_URL, key, model, text)
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Cerebras {model} failed: {e}")
             continue
+    
     raise ValueError("All Cerebras models failed")
 
 
@@ -132,19 +226,29 @@ def _call_groq(text: str) -> dict:
     key = _get_keys()["groq"]
     if not key:
         raise ValueError("Groq API key missing")
-    # Current Groq models (Sept 2026) - old llama-3.3-70b-versatile deprecated Aug 16, 2026
-    for model in ["openai/gpt-oss-120b", "qwen/qwen3.6-27b"]:
+    
+    # Try to discover available models
+    models = _discover_models("groq", GROQ_URL, key)
+    
+    # Fallback to known models if discovery fails
+    if not models:
+        models = ["llama-3.3-70b-specdec", "llama-3.1-70b-versatile", "gemma2-9b-it"]
+    
+    # Try each model until one works
+    for model in models:
         try:
             return _call_openai_compat(GROQ_URL, key, model, text)
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Groq {model} failed: {e}")
             continue
+    
     raise ValueError("All Groq models failed")
 
 
 def _call_gemini(text: str) -> dict:
     """
-    Gemini via web2api proxy (supports AQ. session tokens).
-    Falls back to standard API if proxy unavailable.
+    Gemini via web2api proxy (supports AQ. session tokens) OR direct API.
+    Automatically discovers available models.
     """
     key = _get_keys()["gemini"]
     proxy_url = _get_keys()["gemini_proxy"]
@@ -152,57 +256,70 @@ def _call_gemini(text: str) -> dict:
     if not key:
         raise ValueError("Gemini API key missing")
     
-    prompt = f"{SYSTEM_PROMPT}\n\nClaim: {text}"
-    
-    # Try web2api proxy first (supports AQ. tokens)
-    if proxy_url and key.startswith("AQ."):
+    # Try web2api proxy first (supports AQ. tokens + anonymous)
+    if proxy_url:
         try:
-            r = requests.post(
-                f"{proxy_url}/v1/chat/completions",  # OpenAI-compatible endpoint
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {key}"
-                },
-                json={
-                    "model": "gemini-3.5-flash",
-                    "messages": [
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": f"Claim: {text}"}
-                    ],
-                    "temperature": 0.1,
-                    "max_tokens": 300
-                },
-                timeout=15
-            )
-            if r.status_code == 200:
-                raw = r.json()["choices"][0]["message"]["content"].strip()
-                return _parse_structured(raw)
-            logger.warning(f"Web2API proxy returned {r.status_code}: {r.text[:200]}")
-        except requests.exceptions.ConnectionError:
-            logger.warning("Web2API proxy not running at %s", proxy_url)
+            # Discover available models from proxy
+            models = _discover_models("gemini_proxy", proxy_url, "")
+            if not models:
+                models = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash"]
+            
+            for model in models[:3]:  # Try first 3 models
+                try:
+                    r = requests.post(
+                        f"{proxy_url}/v1/chat/completions",
+                        headers={"Content-Type": "application/json"},
+                        json={
+                            "model": model,
+                            "messages": [
+                                {"role": "system", "content": SYSTEM_PROMPT},
+                                {"role": "user", "content": f"Claim: {text}"}
+                            ],
+                            "temperature": 0.1,
+                            "max_tokens": 300
+                        },
+                        timeout=15
+                    )
+                    if r.status_code == 200:
+                        raw = r.json()["choices"][0]["message"]["content"].strip()
+                        return _parse_structured(raw)
+                    logger.debug(f"Proxy {model} returned {r.status_code}")
+                except Exception as e:
+                    logger.debug(f"Proxy {model} failed: {e}")
+                    continue
         except Exception as e:
-            logger.warning("Web2API proxy error: %s", e)
+            logger.warning(f"Gemini proxy error: {e}")
     
-    # Standard Gemini API (for AIzaSy keys) - gemini-3.5-flash is current as of Sept 2026
+    # Fallback to direct API (for AIzaSy keys only)
     if not key.startswith("AQ."):
-        r = requests.post(
-            f"{GEMINI_URL}?key={key}",
-            headers={"Content-Type": "application/json"},
-            json={
-                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.1, "maxOutputTokens": 300}
-            },
-            timeout=12
-        )
-        if r.status_code == 429:
-            raise ValueError("Gemini quota exhausted")
-        if r.status_code != 200:
-            logger.warning("Gemini failed: %s %s", r.status_code, r.text[:300])
-        r.raise_for_status()
-        raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-        return _parse_structured(raw)
+        # Discover available models
+        models = _discover_models("gemini", "", key)
+        if not models:
+            models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"]
+        
+        prompt = f"{SYSTEM_PROMPT}\n\nClaim: {text}"
+        
+        for model in models[:3]:  # Try first 3 models
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                r = requests.post(
+                    f"{url}?key={key}",
+                    headers={"Content-Type": "application/json"},
+                    json={
+                        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 300}
+                    },
+                    timeout=12
+                )
+                if r.status_code == 200:
+                    raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    return _parse_structured(raw)
+                logger.debug(f"Gemini {model} returned {r.status_code}")
+            except Exception as e:
+                logger.debug(f"Gemini {model} failed: {e}")
+                continue
     
-    raise ValueError("Gemini web2api proxy not available and token format requires proxy")
+    raise ValueError("All Gemini models failed")
 
 
 def _call_minimax(text: str) -> dict:
@@ -265,18 +382,27 @@ def _call_gemma4(text: str) -> dict:
 def _call_openrouter(text: str) -> dict:
     """
     OpenRouter — FREE tier with access to multiple free models.
-    Uses Google Gemma 2 9B (free, no credit card).
-    Get free key at: https://openrouter.ai/keys
+    Dynamically discovers available free models.
     """
     key = _get_keys()["openrouter"]
     if not key:
         raise ValueError("OpenRouter API key missing")
-    # Try free models on OpenRouter
-    for model in ["google/gemma-2-9b-it:free", "meta-llama/llama-3.1-8b-instruct:free"]:
+    
+    # Discover free models
+    models = _discover_models("openrouter", OPENROUTER_URL, key)
+    
+    # Fallback to known free models if discovery fails
+    if not models:
+        models = ["google/gemma-2-9b-it:free", "meta-llama/llama-3-8b-instruct:free", "mistralai/mistral-7b-instruct:free"]
+    
+    # Try each model until one works
+    for model in models[:5]:  # Try first 5 free models
         try:
             return _call_openai_compat(OPENROUTER_URL, key, model, text)
-        except Exception:
+        except Exception as e:
+            logger.debug(f"OpenRouter {model} failed: {e}")
             continue
+    
     raise ValueError("All OpenRouter free models failed")
 
 

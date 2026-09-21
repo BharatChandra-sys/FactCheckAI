@@ -10,12 +10,11 @@ from dotenv import load_dotenv
 _env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
 load_dotenv(_env_path)
 
-CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
-GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
-GEMINI_URL   = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-MINIMAX_URL  = "https://api.minimax.io/v1/chat/completions"
-# OpenRouter — FREE tier with multiple models
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+# Import central AI config for dynamic model discovery
+from app.analysis.ai_config import (
+    get_api_keys, get_all_working_models, get_first_working_model,
+    CEREBRAS_URL, GROQ_URL, MINIMAX_URL, OPENROUTER_URL, GEMINI_URL_BASE
+)
 
 CHAT_SYSTEM = (
     "You are a helpful, knowledgeable assistant specializing in media literacy and fact-checking. "
@@ -35,13 +34,8 @@ CLAIM_DETECT_PROMPT = (
 
 
 def _get_keys():
-    return {
-        "cerebras":   os.getenv("CEREBRAS_API_KEY"),
-        "groq":       os.getenv("GROQ_API_KEY"),
-        "gemini":     os.getenv("GEMINI_API_KEY"),
-        "minimax":    os.getenv("MINIMAX_API_KEY"),
-        "openrouter": os.getenv("OPENROUTER_API_KEY"),
-    }
+    """Wrapper for backward compatibility."""
+    return get_api_keys()
 
 
 def _call_openai_compat(url: str, key: str, model: str, messages: list, max_tokens=400, temperature=0.7) -> str:
@@ -59,6 +53,13 @@ def _call_gemini(messages: list, max_tokens=400, temperature=0.7) -> str:
     key = _get_keys()["gemini"]
     if not key:
         raise ValueError("Gemini API key missing")
+    
+    # Use dynamic model discovery - try first available model
+    from app.analysis.ai_config import discover_gemini_models
+    models = discover_gemini_models(key)
+    if not models:
+        models = ["gemini-1.5-flash", "gemini-1.5-pro"]
+    
     contents = []
     system_text = ""
     for m in messages:
@@ -69,14 +70,24 @@ def _call_gemini(messages: list, max_tokens=400, temperature=0.7) -> str:
         contents.append({"role": role, "parts": [{"text": m["content"]}]})
     if contents and contents[0]["role"] == "user" and system_text:
         contents[0]["parts"][0]["text"] = system_text + "\n\n" + contents[0]["parts"][0]["text"]
-    r = requests.post(
-        f"{GEMINI_URL}?key={key}",
-        headers={"Content-Type": "application/json"},
-        json={"contents": contents, "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens}},
-        timeout=12
-    )
-    r.raise_for_status()
-    return r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+    
+    # Try models until one works
+    for model in models[:3]:
+        try:
+            url = f"{GEMINI_URL_BASE}/{model}:generateContent"
+            r = requests.post(
+                f"{url}?key={key}",
+                headers={"Content-Type": "application/json"},
+                json={"contents": contents, "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens}},
+                timeout=12
+            )
+            r.raise_for_status()
+            return r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+        except Exception as e:
+            if model == models[-1] or model == models[2]:  # Last attempt
+                raise
+            continue
+    raise ValueError("All Gemini models failed")
 
 
 def _call_minimax_chat(messages: list, max_tokens=400, temperature=0.7) -> str:
@@ -123,20 +134,25 @@ def is_claim(text: str) -> bool:
     # Prioritize FREE providers
     if keys["openrouter"]:
         fns.append(("OpenRouter", lambda: _call_openai_compat(OPENROUTER_URL, keys["openrouter"], "google/gemma-2-9b-it:free", messages, max_tokens=5, temperature=0)))
-    # Try Groq with updated model names
+    
+    # Groq - use dynamic model discovery
     if keys["groq"]:
-        # Updated Groq models (llama3-8b-8192 was decommissioned)
-        for model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]:
-            try:
-                fns.append((f"Groq-{model}", lambda m=model: _call_openai_compat(GROQ_URL, keys["groq"], m, messages, max_tokens=5, temperature=0)))
-                break
-            except:
-                continue
+        groq_models = get_all_working_models("groq")
+        if groq_models:
+            model = groq_models[0]  # Use first available
+            fns.append((f"Groq-{model}", lambda m=model: _call_openai_compat(GROQ_URL, keys["groq"], m, messages, max_tokens=5, temperature=0)))
+    
     # Gemini as backup (may have quota limits)
     if keys["gemini"]:
         fns.append(("Gemini", lambda: _call_gemini(messages, max_tokens=5, temperature=0)))
+    
+    # Cerebras - use dynamic model discovery
     if keys["cerebras"]:
-        fns.append(("Cerebras", lambda: _call_openai_compat(CEREBRAS_URL, keys["cerebras"], "llama3.1-8b", messages, max_tokens=5, temperature=0)))
+        cerebras_models = get_all_working_models("cerebras")
+        if cerebras_models:
+            model = cerebras_models[0]
+            fns.append((f"Cerebras-{model}", lambda m=model: _call_openai_compat(CEREBRAS_URL, keys["cerebras"], m, messages, max_tokens=5, temperature=0)))
+    
     if keys["minimax"]:
         fns.append(("MiniMax", lambda: _call_minimax_chat(messages, max_tokens=5, temperature=0)))
 
@@ -162,22 +178,28 @@ def run_chat(message: str, history: list) -> str:
     # Prioritize FREE providers
     if keys["openrouter"]:
         fns.append(("OpenRouter", lambda: _call_openai_compat(OPENROUTER_URL, keys["openrouter"], "google/gemma-2-9b-it:free", msgs)))
-    # Try Groq with updated model names (old models decommissioned)
+    
+    # Groq - use dynamic model discovery
     if keys["groq"]:
-        for model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]:
-            try:
-                fns.append((f"Groq-{model}", lambda m=model: _call_openai_compat(GROQ_URL, keys["groq"], m, msgs)))
-                break
-            except:
-                continue
+        groq_models = get_all_working_models("groq")
+        if groq_models:
+            model = groq_models[0]  # Use first available
+            fns.append((f"Groq-{model}", lambda m=model: _call_openai_compat(GROQ_URL, keys["groq"], m, msgs)))
+    
     # Gemini as backup (may have quota limits)
     if keys["gemini"]:
         fns.append(("Gemini", lambda: _call_gemini(msgs)))
+    
     # MiniMax M2.7-highspeed for chat — fastest with high quality
     if keys["minimax"]:
         fns.append(("MiniMax", lambda: _call_minimax_chat(msgs)))
+    
+    # Cerebras - use dynamic model discovery
     if keys["cerebras"]:
-        fns.append(("Cerebras", lambda: _call_openai_compat(CEREBRAS_URL, keys["cerebras"], "llama3.1-8b", msgs)))
+        cerebras_models = get_all_working_models("cerebras")
+        if cerebras_models:
+            model = cerebras_models[0]
+            fns.append((f"Cerebras-{model}", lambda m=model: _call_openai_compat(CEREBRAS_URL, keys["cerebras"], m, msgs)))
 
     try:
         return _first_success(fns)
@@ -185,3 +207,4 @@ def run_chat(message: str, history: list) -> str:
         import logging
         logging.warning(f"All AI providers failed for chat: {e}")
         return "I'm having trouble connecting right now. Please try again in a moment."
+    

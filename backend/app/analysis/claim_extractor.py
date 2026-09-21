@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 Claim Extraction
 
@@ -42,23 +42,41 @@ def _split_sentences(text: str) -> list:
 
 
 def _call_llm_extract(text: str) -> list:
-    """Use first available LLM to extract claims."""
+    """Use first available LLM to extract claims (dynamic model discovery)."""
     from app.analysis.chat import _call_openai_compat, _call_gemini, _get_keys, _first_success
+    from app.analysis.ai_config import discover_cerebras_models, discover_groq_models, CEREBRAS_URL, GROQ_URL
+    
     keys = _get_keys()
     prompt = EXTRACT_PROMPT.format(text=text[:1500])
     messages = [{"role": "user", "content": prompt}]
 
     fns = []
+    
+    # Try Cerebras with dynamic model discovery
     if keys.get("cerebras"):
-        fns.append(("Cerebras", lambda: _call_openai_compat(
-            "https://api.cerebras.ai/v1/chat/completions",
-            keys["cerebras"], "llama3.1-8b", messages, max_tokens=200, temperature=0
-        )))
+        cerebras_models = discover_cerebras_models(keys["cerebras"])
+        for model in cerebras_models[:2]:
+            try:
+                fns.append((f"Cerebras-{model}", lambda m=model: _call_openai_compat(
+                    CEREBRAS_URL,
+                    keys["cerebras"], m, messages, max_tokens=200, temperature=0
+                )))
+            except Exception:
+                continue
+                
+    # Try Groq with dynamic model discovery
     if keys.get("groq"):
-        fns.append(("Groq", lambda: _call_openai_compat(
-            "https://api.groq.com/openai/v1/chat/completions",
-            keys["groq"], "llama-3.3-70b-versatile", messages, max_tokens=200, temperature=0
-        )))
+        groq_models = discover_groq_models(keys["groq"])
+        for model in groq_models[:2]:
+            try:
+                fns.append((f"Groq-{model}", lambda m=model: _call_openai_compat(
+                    GROQ_URL,
+                    keys["groq"], m, messages, max_tokens=200, temperature=0
+                )))
+            except Exception:
+                continue
+                
+    # Try Gemini
     if keys.get("gemini"):
         fns.append(("Gemini", lambda: _call_gemini(messages, max_tokens=200, temperature=0)))
 

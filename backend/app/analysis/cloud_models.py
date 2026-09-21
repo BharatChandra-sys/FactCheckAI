@@ -1,7 +1,7 @@
 # Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 # Licensed under the Apache License, Version 2.0
 # SPDX-License-Identifier: Apache-2.0
-# Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+# Project: FactCheckAI ï¿½ https://github.com/BharatChandra-sys/fake-news-extension
 """
 Cloud Model Inference â€” PiNE AI
 ================================
@@ -356,22 +356,35 @@ def get_inoculation(claim_text: str) -> Optional[dict]:
     import re, json
     try:
         from app.analysis.chat import _call_openai_compat, _call_gemini, _get_keys, _first_success
+        from app.analysis.ai_config import get_all_working_models, GROQ_URL, CEREBRAS_URL
+        
         keys  = _get_keys()
         prompt = _INOCULATION_PROMPT.format(claim=claim_text[:300])
         msgs  = [{"role": "user", "content": prompt}]
         fns   = []
+        
         if keys.get("gemini"):
             fns.append(("Gemini", lambda: _call_gemini(msgs, max_tokens=80, temperature=0)))
+        
+        # Groq - dynamic models
         if keys.get("groq"):
-            fns.append(("Groq", lambda: _call_openai_compat(
-                "https://api.groq.com/openai/v1/chat/completions",
-                keys["groq"], "llama-3.3-70b-versatile", msgs, max_tokens=80, temperature=0
-            )))
+            groq_models = get_all_working_models("groq")
+            if groq_models:
+                model = groq_models[0]
+                fns.append(("Groq", lambda m=model: _call_openai_compat(
+                    GROQ_URL,
+                    keys["groq"], m, msgs, max_tokens=80, temperature=0
+                )))
+        
+        # Cerebras - dynamic models
         if keys.get("cerebras"):
-            fns.append(("Cerebras", lambda: _call_openai_compat(
-                "https://api.cerebras.ai/v1/chat/completions",
-                keys["cerebras"], "llama3.1-8b", msgs, max_tokens=80, temperature=0
-            )))
+            cerebras_models = get_all_working_models("cerebras")
+            if cerebras_models:
+                model = cerebras_models[0]
+                fns.append(("Cerebras", lambda m=model: _call_openai_compat(
+                    CEREBRAS_URL,
+                    keys["cerebras"], m, msgs, max_tokens=80, temperature=0
+                )))
         if not fns:
             return None
         raw = _first_success(fns)

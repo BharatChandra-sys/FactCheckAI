@@ -61,7 +61,7 @@ def reason_over_context(claim: str, context: str) -> dict:
     """
     Run RAG reasoning: claim + retrieved context → structured assessment.
 
-    Tries Groq first (fastest), then Gemini, then Cerebras.
+    Dynamically discovers available models from all providers.
     Returns empty dict if all providers fail (caller handles gracefully).
     """
     if not context or context == "No relevant evidence found.":
@@ -79,29 +79,45 @@ def reason_over_context(claim: str, context: str) -> dict:
 
     try:
         from app.analysis.chat import _call_openai_compat, _call_gemini, _get_keys, _first_success
+        from app.analysis.ai_config import discover_groq_models, discover_cerebras_models, GROQ_URL, CEREBRAS_URL
 
         keys = _get_keys()
         fns  = []
 
+        # Try Groq with dynamic model discovery
         if keys.get("groq"):
-            fns.append(("Groq", lambda: _call_openai_compat(
-                "https://api.groq.com/openai/v1/chat/completions",
-                keys["groq"], "llama-3.3-70b-versatile",
-                [{"role": "system", "content": _RAG_SYSTEM_PROMPT}] + messages,
-                max_tokens=600, temperature=0.1,
-            )))
+            groq_models = discover_groq_models(keys["groq"])
+            for model in groq_models[:3]:  # Try first 3 models
+                try:
+                    fns.append((f"Groq-{model}", lambda m=model: _call_openai_compat(
+                        GROQ_URL,
+                        keys["groq"], m,
+                        [{"role": "system", "content": _RAG_SYSTEM_PROMPT}] + messages,
+                        max_tokens=600, temperature=0.1,
+                    )))
+                except Exception:
+                    continue
+                    
+        # Try Gemini
         if keys.get("gemini"):
             fns.append(("Gemini", lambda: _call_gemini(
                 [{"role": "system", "content": _RAG_SYSTEM_PROMPT}] + messages,
                 max_tokens=600, temperature=0.1,
             )))
+            
+        # Try Cerebras with dynamic model discovery
         if keys.get("cerebras"):
-            fns.append(("Cerebras", lambda: _call_openai_compat(
-                "https://api.cerebras.ai/v1/chat/completions",
-                keys["cerebras"], "llama3.1-8b",
-                [{"role": "system", "content": _RAG_SYSTEM_PROMPT}] + messages,
-                max_tokens=600, temperature=0.1,
-            )))
+            cerebras_models = discover_cerebras_models(keys["cerebras"])
+            for model in cerebras_models[:2]:  # Try first 2 models
+                try:
+                    fns.append((f"Cerebras-{model}", lambda m=model: _call_openai_compat(
+                        CEREBRAS_URL,
+                        keys["cerebras"], m,
+                        [{"role": "system", "content": _RAG_SYSTEM_PROMPT}] + messages,
+                        max_tokens=600, temperature=0.1,
+                    )))
+                except Exception:
+                    continue
 
         if not fns:
             return {}
