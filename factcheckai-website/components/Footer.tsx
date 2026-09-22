@@ -7,18 +7,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <img
-                src="/logo.png"
-                alt="FactCheckAI Logo"
-                className="h-10 w-auto"
-              />
-              <span className="text-xl font-bold text-on-surface">
-                FactCheck<span className="text-ai-orange">AI</span>
-              </span>
-            </div>
+            <span className="text-xl font-bold text-white">
+              FactCheck<span className="text-brand-yellow">AI</span>
+            </span>
             <p className="text-sm text-on-surface-variant max-w-xs">
-              AI-assisted fact verification for the modern web. Built with transparency, calibrated with humility.
+              AI-powered fact verification for everyone. We help you separate truth from fiction while you browse the web.
             </p>
             <div className="flex items-center gap-3">
               <a href="mailto:contact@gari.live" className="text-on-surface-variant hover:text-on-surface transition-colors" title="Email us">
@@ -36,18 +29,18 @@ export default function Footer() {
 
           {/* Product Column */}
           <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-semibold text-on-surface uppercase tracking-wider">Product</h3>
+            <h3 className="text-sm font-semibold text-on-surface uppercase tracking-wider">Features</h3>
             <Link href="/#product" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors">
-              Features
+              Real-time Checking
             </Link>
             <Link href="/#how-it-works" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors">
               How It Works
             </Link>
             <Link href="/#technology" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors">
-              Technology
+              Our Technology
             </Link>
-            <a href="#install" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors">
-              Install Extension
+            <a href="https://chrome.google.com/webstore/category/extensions" target="_blank" rel="noopener noreferrer" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+              Download
             </a>
           </div>
 

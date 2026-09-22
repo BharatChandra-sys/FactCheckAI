@@ -12,13 +12,8 @@ export default function Header() {
         {/* Logo */}
         <div className="flex items-center gap-4 shrink-0">
           <Link href="/" className="flex items-center gap-3 group focus:outline-none">
-            <img
-              src="/logo.png"
-              alt="FactCheckAI Logo"
-              className="h-10 w-auto object-contain"
-            />
-            <span className="text-xl font-bold tracking-tight text-on-surface">
-              FactCheck<span className="text-ai-orange">AI</span>
+            <span className="text-xl font-bold tracking-tight text-white">
+              FactCheck<span className="text-brand-yellow">AI</span>
             </span>
           </Link>
         </div>
@@ -45,23 +40,13 @@ export default function Header() {
         {/* Actions */}
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <a
-            href="https://github.com/yourusername/factcheckai"
+            href="https://chrome.google.com/webstore/category/extensions"
             target="_blank"
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded border border-outline-variant/40 bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors text-sm"
-          >
-            <span className="text-tertiary">★</span>
-            <span>1.8k</span>
-          </a>
-          
-          <a
-            href="#install"
+            rel="noopener noreferrer"
             className="flex items-center gap-2 bg-primary-container hover:bg-surface-tint text-on-primary-fixed text-sm font-semibold px-4 py-1.5 rounded transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-container"
           >
             <span className="material-symbols-outlined text-lg">extension</span>
-            <span>Install Extension</span>
-            <span className="hidden md:inline-block text-xs bg-on-primary-fixed/15 text-on-primary-fixed px-1.5 py-0.5 rounded tracking-widest font-mono">
-              ⌘⇧F
-            </span>
+            <span>Get Extension</span>
           </a>
         </div>
       </div>
