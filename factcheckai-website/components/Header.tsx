@@ -20,19 +20,40 @@ export default function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-6">
-          <Link href="/#product" className="text-sm text-on-surface font-semibold bg-surface-container-high rounded px-3 py-1.5 transition-colors">
+          <a 
+            href="#product" 
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('product')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className="text-sm text-white font-semibold bg-surface-container-high rounded px-3 py-1.5 transition-colors cursor-pointer"
+          >
             Product
-          </Link>
-          <Link href="/#how-it-works" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors py-1.5 px-2">
+          </a>
+          <a 
+            href="#how-it-works" 
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className="text-sm text-on-surface-variant hover:text-white transition-colors py-1.5 px-2 cursor-pointer"
+          >
             How It Works
-          </Link>
-          <Link href="/#technology" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors py-1.5 px-2">
+          </a>
+          <a 
+            href="#technology" 
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('technology')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className="text-sm text-on-surface-variant hover:text-white transition-colors py-1.5 px-2 cursor-pointer"
+          >
             Technology
-          </Link>
-          <Link href="https://github.com/BharatChandra-sys/FactCheckAI" target="_blank" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors py-1.5 px-2">
+          </a>
+          <Link href="https://github.com/BharatChandra-sys/FactCheckAI" target="_blank" className="text-sm text-on-surface-variant hover:text-white transition-colors py-1.5 px-2">
             GitHub
           </Link>
-          <Link href="/privacy" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors py-1.5 px-2">
+          <Link href="/privacy" className="text-sm text-on-surface-variant hover:text-white transition-colors py-1.5 px-2">
             Privacy
           </Link>
         </nav>
@@ -40,10 +61,8 @@ export default function Header() {
         {/* Actions */}
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <a
-            href="https://chrome.google.com/webstore/category/extensions"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-primary-container hover:bg-surface-tint text-on-primary-fixed text-sm font-semibold px-4 py-1.5 rounded transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-container"
+            href="/install"
+            className="flex items-center gap-2 bg-brand-yellow hover:bg-brand-orange text-black text-sm font-semibold px-4 py-1.5 rounded transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-yellow"
           >
             <span className="material-symbols-outlined text-lg">extension</span>
             <span>Get Extension</span>

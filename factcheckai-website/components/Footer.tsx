@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 
 export default function Footer() {
@@ -29,17 +31,38 @@ export default function Footer() {
 
           {/* Product Column */}
           <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-semibold text-on-surface uppercase tracking-wider">Features</h3>
-            <Link href="/#product" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Features</h3>
+            <a 
+              href="#product" 
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('product')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="text-sm text-on-surface-variant hover:text-white transition-colors cursor-pointer"
+            >
               Real-time Checking
-            </Link>
-            <Link href="/#how-it-works" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+            </a>
+            <a 
+              href="#how-it-works" 
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="text-sm text-on-surface-variant hover:text-white transition-colors cursor-pointer"
+            >
               How It Works
-            </Link>
-            <Link href="/#technology" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+            </a>
+            <a 
+              href="#technology" 
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('technology')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="text-sm text-on-surface-variant hover:text-white transition-colors cursor-pointer"
+            >
               Our Technology
-            </Link>
-            <a href="https://chrome.google.com/webstore/category/extensions" target="_blank" rel="noopener noreferrer" className="text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+            </a>
+            <a href="https://chrome.google.com/webstore/category/extensions" target="_blank" rel="noopener noreferrer" className="text-sm text-on-surface-variant hover:text-white transition-colors">
               Download
             </a>
           </div>

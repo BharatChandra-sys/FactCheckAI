@@ -42,7 +42,7 @@ export default function HeroSection() {
             transition={{ duration: 0.8, delay: 0.6 }}
           >
             <motion.a
-              href="#install"
+              href="/install"
               className="inline-flex items-center gap-2 bg-brand-yellow hover:bg-brand-orange text-black text-base font-semibold px-6 py-2.5 rounded shadow-sm transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -53,6 +53,11 @@ export default function HeroSection() {
 
             <motion.a
               href="#how-it-works"
+              onClick={(e) => {
+                e.preventDefault();
+                const element = document.getElementById('how-it-works');
+                element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
               className="inline-flex items-center gap-2 bg-surface-container-high hover:bg-surface-container-highest text-white text-base font-medium px-4 py-2.5 rounded transition-colors shadow-sm"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
