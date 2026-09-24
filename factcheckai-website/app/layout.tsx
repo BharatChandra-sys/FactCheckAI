@@ -19,14 +19,35 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://gari.live'),
+  metadataBase: new URL('https://factcheckaisix.vercel.app'),
   title: {
-    default: "FactCheckAI - Verify what you read, before you believe it",
+    default: "FactCheckAI - AI-Powered Fact Verification Extension | Stop Misinformation",
     template: "%s | FactCheckAI"
   },
-  description: "Professional AI-assisted fact verification. Real-time fake news detection powered by hybrid retrieval and evidence-based reasoning. Install our browser extension for instant credibility assessment.",
-  keywords: ["fact-checking", "AI", "artificial intelligence", "misinformation", "fake news", "browser extension", "truth verification", "credibility assessment", "evidence-based", "hybrid retrieval"],
-  authors: [{ name: "FactCheckAI Team", url: "https://gari.live" }],
+  description: "FactCheckAI is a powerful browser extension that verifies claims in real-time using advanced AI models. Detect fake news, misinformation, and false claims instantly while browsing. Free fact-checking tool with evidence-based verification.",
+  keywords: [
+    "fact check",
+    "fact checker",
+    "factcheck ai",
+    "fact checking",
+    "ai fact checker",
+    "fake news detector",
+    "misinformation detector",
+    "truth verification",
+    "claim verification",
+    "browser extension",
+    "chrome extension",
+    "edge extension",
+    "real-time fact checking",
+    "ai verification",
+    "fake news",
+    "disinformation",
+    "media literacy",
+    "source verification",
+    "evidence based",
+    "credibility assessment"
+  ],
+  authors: [{ name: "FactCheckAI Team", url: "https://factcheckaisix.vercel.app" }],
   creator: "FactCheckAI",
   publisher: "FactCheckAI",
   applicationName: "FactCheckAI",
@@ -46,15 +67,24 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://gari.live",
+    url: "https://factcheckaisix.vercel.app",
     siteName: "FactCheckAI",
-    title: "FactCheckAI - AI-Powered Fact Verification",
-    description: "Verify claims instantly with our professional browser extension. Evidence-based fact-checking at your fingertips.",
+    title: "FactCheckAI - AI-Powered Fact Verification Extension",
+    description: "Verify claims instantly with our AI-powered browser extension. Stop misinformation before it spreads. Evidence-based fact-checking at your fingertips.",
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'FactCheckAI - AI-Powered Fact Verification',
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "FactCheckAI - AI-Powered Fact Verification",
-    description: "Professional fact-checking extension powered by AI",
+    description: "Verify claims instantly. Stop misinformation. Free AI-powered browser extension.",
+    images: ['/og-image.png'],
   },
   icons: {
     icon: [
@@ -67,12 +97,10 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   alternates: {
-    canonical: 'https://gari.live',
+    canonical: 'https://factcheckaisix.vercel.app',
   },
-  verification: {
-    // Add when you have these services set up
-    // google: 'your-google-site-verification-code',
-    // yandex: 'your-yandex-verification-code',
+  other: {
+    'google-site-verification': 'google5834a36d31acb362',
   },
 };
 
