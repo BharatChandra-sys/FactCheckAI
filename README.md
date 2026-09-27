@@ -2,7 +2,7 @@
 <!-- Licensed under the Apache License, Version 2.0 | SPDX-License-Identifier: Apache-2.0 -->
 
 <p align="center">
-  <img src="extension/icons/icon128.png" alt="FactCheckAI" width="128" height="128"/>
+  <img src="extension\icons\truvanta-logo.png" alt="TruvantaAI" width="128" height="128"/>
   <h1 align="center">FactCheckAI</h1>
 </p>
 
@@ -39,7 +39,7 @@ Traditional fact-checking is manual and does not scale to the volume of content 
 
 ## The Solution
 
-FactCheckAI combines trained ML classifiers with a persistent knowledge base and an agentic orchestration layer. A Chrome extension sends claims to a FastAPI backend that runs a stateful LangGraph workflow — normalizing the claim, running ML models, retrieving similar historical fact-checks and evidence from a pgvector knowledge base, doing RAG reasoning over the retrieved context, and writing the result back to memory for future retrieval.
+Truvanta AI combines trained ML classifiers with a persistent knowledge base and an agentic orchestration layer. A Chrome extension sends claims to a FastAPI backend that runs a stateful LangGraph workflow — normalizing the claim, running ML models, retrieving similar historical fact-checks and evidence from a pgvector knowledge base, doing RAG reasoning over the retrieved context, and writing the result back to memory for future retrieval.
 
 - **Owned ML intelligence** — fine-tuned RoBERTa models remain the primary classification signal
 - **Persistent fact memory** — every qualified fact-check is stored with vector embeddings in PostgreSQL + pgvector, enabling semantic retrieval across restarts
