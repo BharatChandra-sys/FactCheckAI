@@ -1,16 +1,9 @@
-import type { Metadata } from 'next';
+'use client';
+
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-
-export const metadata: Metadata = {
-  title: 'Installation Guide',
-  description: 'Step-by-step guide to install TruvantaAI browser extension on Chrome and Edge.',
-  alternates: {
-    canonical: 'https://truvantaai.tech/install',
-  },
-};
 
 export default function InstallGuidePage() {
   const steps = [
