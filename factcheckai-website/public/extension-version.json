@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "buildDate": "2026-09-24",
+  "backendUrl": "https://factcheckai-gjrk.onrender.com",
+  "features": [
+    "Three.js animated background",
+    "Real-time GitHub stats",
+    "Smooth scroll navigation",
+    "Industry-grade SEO",
+    "XSS protection",
+    "Privacy-first design"
+  ],
+  "changelog": [
+    "Updated backend URL to factcheckai-gjrk.onrender.com",
+    "Added comprehensive SEO optimization",
+    "Implemented security headers",
+    "Added structured data for Google",
+    "Optimized for top Google rankings"
+  ]
+}
