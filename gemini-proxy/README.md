@@ -48,7 +48,7 @@ The proxy will start on `http://localhost:8081`
 ### Production Deployment (Render)
 
 1. **Deploy as Web Service**:
-   - Repository: `BharatChandra-sys/FactCheckAI`
+   - Repository: `BharatChandra-sys/TruvantaAI`
    - Root Directory: `gemini-proxy`
    - Build Command: `pip install -r requirements.txt`
    - Start Command: `python gemini_web2api.py`
@@ -194,7 +194,7 @@ This proxy implementation is part of FactCheckAI.
 ## Support
 
 For issues specific to FactCheckAI integration:
-- GitHub Issues: [BharatChandra-sys/FactCheckAI/issues](https://github.com/BharatChandra-sys/FactCheckAI/issues)
+- GitHub Issues: [BharatChandra-sys/TruvantaAI/issues](https://github.com/BharatChandra-sys/TruvantaAI/issues)
 
 For proxy-specific issues:
 - Original repo: [Sophomoresty/gemini-web2api](https://github.com/Sophomoresty/gemini-web2api)

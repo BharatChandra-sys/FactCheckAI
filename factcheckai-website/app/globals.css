@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* FactCheckAI Brand Colors - Yellow/Orange, Black, White */
+  /* TruvantaAI Brand Colors - Yellow/Orange, Black, White */
   --color-brand-yellow: #fbbf24; /* Main yellow/orange accent */
   --color-brand-orange: #f59e0b; /* Secondary orange */
   --color-brand-amber: #f97316; /* Tertiary amber */

@@ -1,9 +1,9 @@
 <!-- Copyright 2027 Bodapati Bharat Chandra. All rights reserved. -->
 <!-- Licensed under the Apache License, Version 2.0 | SPDX-License-Identifier: Apache-2.0 -->
 
-# Contributing to FactCheckAI
+# Contributing to TruvantaAI
 
-We welcome contributions from the community! This guide will help you get started with contributing to FactCheckAI.
+We welcome contributions from the community! This guide will help you get started with contributing to TruvantaAI.
 
 ## 🚀 Quick Start
 
@@ -241,7 +241,7 @@ Contributors will be:
 
 - **Discord**: Real-time chat with maintainers
 - **GitHub Discussions**: Design discussions, Q&A
-- **Email**: technical@factcheckai.com for sensitive issues
+- **Email**: technical@TruvantaAI.com for sensitive issues
 
 ## 📄 License
 

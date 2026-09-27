@@ -82,7 +82,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/github',
-        destination: 'https://github.com/yourusername/factcheckai',
+        destination: 'https://github.com/yourusername/TruvantaAI',
         permanent: true,
       },
     ];

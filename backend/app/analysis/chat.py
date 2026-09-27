@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
 import os
+import re
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
@@ -31,6 +32,84 @@ CLAIM_DETECT_PROMPT = (
     "Reply with ONLY one word: claim or other.\n\n"
     "Input: {text}"
 )
+
+# ══════════════════════════════════════════════════════════
+# 🚀 OPTIMIZATION: Pattern-based responses (no AI needed)
+# ══════════════════════════════════════════════════════════
+
+# Common greetings and simple queries - instant responses
+QUICK_RESPONSES = {
+    r'^(hi|hello|hey|greetings)[\s!.]*$': "Hello! I'm TruvantaAI, your fact-checking assistant. How can I help you today?",
+    r'^(how are you|how\'s it going|what\'s up)[\s?!.]*$': "I'm functioning well, thanks! I'm here to help you verify claims and combat misinformation. What would you like to check?",
+    r'^(thanks|thank you|thx)[\s!.]*$': "You're welcome! Feel free to ask if you need anything else.",
+    r'^(bye|goodbye|see you)[\s!.]*$': "Goodbye! Stay informed and keep questioning what you read online.",
+    r'^(who are you|what are you)[\s?!.]*$': "I'm TruvantaAI, an AI-powered fact-checking assistant. I help verify claims, detect fake news, and provide evidence-based analysis.",
+    r'^(help|what can you do)[\s?!.]*$': "I can help you:\n• Fact-check claims and news articles\n• Detect misinformation and fake news\n• Provide evidence from trusted sources\n• Analyze manipulation tactics\n\nJust share a claim or article with me!",
+}
+
+def _quick_response(text: str) -> str:
+    """Check if input matches common patterns for instant response."""
+    text_lower = text.lower().strip()
+    for pattern, response in QUICK_RESPONSES.items():
+        if re.match(pattern, text_lower, re.IGNORECASE):
+            return response
+    return None
+
+
+# ══════════════════════════════════════════════════════════
+# 🎯 OPTIMIZATION: TF-IDF claim detection (local, fast)
+# ══════════════════════════════════════════════════════════
+
+def _tfidf_is_claim(text: str) -> bool:
+    """Use local TF-IDF model to detect if text is a claim (fast, no API calls)."""
+    try:
+        import joblib
+        import os
+        
+        # Load TF-IDF model
+        model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "model.joblib")
+        vectorizer_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "vectorizer.joblib")
+        
+        if not os.path.exists(model_path) or not os.path.exists(vectorizer_path):
+            return None  # Models not available, fallback to AI
+        
+        model = joblib.load(model_path)
+        vectorizer = joblib.load(vectorizer_path)
+        
+        # Heuristic rules first (very fast)
+        text_lower = text.lower().strip()
+        
+        # Clearly NOT claims (questions, greetings, opinions)
+        if any(text_lower.startswith(prefix) for prefix in [
+            'how', 'what', 'why', 'when', 'where', 'who', 'can you', 'could you',
+            'please', 'hi', 'hello', 'hey', 'thanks', 'i think', 'in my opinion'
+        ]):
+            return False
+        
+        # Too short to be a claim
+        if len(text.split()) < 4:
+            return False
+        
+        # Has question mark = question, not claim
+        if '?' in text:
+            return False
+        
+        # Vectorize and predict
+        X = vectorizer.transform([text])
+        prediction = model.predict(X)[0]
+        
+        # If TF-IDF predicts fake (>0.5) or real (<0.5), it's likely a claim
+        # If confidence is very low, it might be conversational text
+        proba = model.predict_proba(X)[0]
+        max_proba = max(proba)
+        
+        # High confidence = claim, low confidence = not a claim
+        return max_proba > 0.6  # Require 60% confidence to consider it a claim
+        
+    except Exception as e:
+        import logging
+        logging.debug(f"TF-IDF claim detection failed: {e}")
+        return None  # Fallback to AI
 
 
 def _get_keys():
@@ -125,7 +204,29 @@ def _first_success(fn_list):
 
 
 def is_claim(text: str) -> bool:
-    """Ask AI to classify if the input is a verifiable claim."""
+    """
+    Optimized 3-tier detection:
+    1. Quick pattern check (instant, no compute)
+    2. Local TF-IDF model (fast, ~1ms, no API)
+    3. AI fallback (slow, only if needed)
+    """
+    import logging
+    
+    # Tier 1: Quick pattern check
+    quick_resp = _quick_response(text)
+    if quick_resp:
+        logging.info(f"[Claim Detection] Pattern match - NOT a claim (quick response available)")
+        return False
+    
+    # Tier 2: Local TF-IDF claim detection
+    tfidf_result = _tfidf_is_claim(text)
+    if tfidf_result is not None:
+        logging.info(f"[Claim Detection] TF-IDF model - {'IS' if tfidf_result else 'NOT'} a claim (local, 1ms)")
+        return tfidf_result
+    
+    # Tier 3: AI fallback (only if TF-IDF unavailable or uncertain)
+    logging.info(f"[Claim Detection] Falling back to AI (TF-IDF unavailable)")
+    
     prompt = CLAIM_DETECT_PROMPT.format(text=text)
     messages = [{"role": "user", "content": prompt}]
     keys = _get_keys()
@@ -161,13 +262,24 @@ def is_claim(text: str) -> bool:
         return result.strip().lower().startswith("claim")
     except Exception as e:
         # Log the error for debugging
-        import logging
         logging.warning(f"All AI providers failed for claim detection: {e}")
         # Default: treat as chat (not claim) if all AI providers fail
         return False
 
 
 def run_chat(message: str, history: list) -> str:
+    """
+    Optimized chat with instant responses for common queries.
+    """
+    import logging
+    
+    # Check for instant response (no AI needed)
+    quick_resp = _quick_response(message)
+    if quick_resp:
+        logging.info(f"[Chat] Quick response match - no AI call needed")
+        return quick_resp
+    
+    # Build full conversation for AI
     msgs = [{"role": "system", "content": CHAT_SYSTEM}]
     for h in history[-6:]:
         msgs.append({"role": h["role"], "content": h["content"]})
@@ -204,7 +316,5 @@ def run_chat(message: str, history: list) -> str:
     try:
         return _first_success(fns)
     except Exception as e:
-        import logging
         logging.warning(f"All AI providers failed for chat: {e}")
         return "I'm having trouble connecting right now. Please try again in a moment."
-    

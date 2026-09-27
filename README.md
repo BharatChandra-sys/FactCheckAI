@@ -7,13 +7,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/BharatChandra-sys/FactCheckAI/stargazers">
-    <img src="https://img.shields.io/github/stars/BharatChandra-sys/FactCheckAI?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
+  <a href="https://github.com/BharatChandra-sys/TruvantaAI/stargazers">
+    <img src="https://img.shields.io/github/stars/BharatChandra-sys/TruvantaAI?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
   </a>
   <a href="https://chromewebstore.google.com/detail/factcheckai">
     <img src="https://img.shields.io/badge/Chrome-Extension-4F46E5?style=for-the-badge&logo=googlechrome&labelColor=1e1e2e" alt="Chrome Extension"/>
   </a>
-  <a href="https://github.com/BharatChandra-sys/FactCheckAI/blob/main/LICENSE">
+  <a href="https://github.com/BharatChandra-sys/TruvantaAI/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-Apache%202.0-22c55e?style=for-the-badge&labelColor=1e1e2e" alt="License"/>
   </a>
   <a href="https://factcheckai-backend.onrender.com/health">
@@ -308,7 +308,7 @@ See [KEEP_ALIVE_SETUP.md](KEEP_ALIVE_SETUP.md) to configure monitoring and preve
 **Option 2: Manual Install (Developers)**
 
 ```bash
-git clone https://github.com/BharatChandra-sys/FactCheckAI.git
+git clone https://github.com/BharatChandra-sys/TruvantaAI.git
 cd FactCheckAI
 
 # Chrome -> Extensions -> Developer mode -> Load unpacked -> select 'extension' folder
@@ -477,7 +477,7 @@ Training data:
   title   = {FactCheckAI: Memory-Augmented Agentic Fact Verification},
   author  = {Bodapati Bharat Chandra},
   year    = {2027},
-  url     = {https://github.com/BharatChandra-sys/FactCheckAI},
+  url     = {https://github.com/BharatChandra-sys/TruvantaAI},
   version = {2.7.0},
   license = {Apache-2.0}
 }
@@ -489,11 +489,11 @@ Training data:
   <br/>
   <b>Open-source fact-checking — owned ML, persistent memory, agentic RAG</b>
   <br/><br/>
-  <a href="https://github.com/BharatChandra-sys/FactCheckAI/stargazers">
-    <img src="https://img.shields.io/github/stars/BharatChandra-sys/FactCheckAI?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
+  <a href="https://github.com/BharatChandra-sys/TruvantaAI/stargazers">
+    <img src="https://img.shields.io/github/stars/BharatChandra-sys/TruvantaAI?style=for-the-badge&logo=github&color=4F46E5&labelColor=1e1e2e" alt="Stars"/>
   </a>
   <br/><br/>
-  <a href="https://github.com/BharatChandra-sys/FactCheckAI/issues">Report Issues</a> •
+  <a href="https://github.com/BharatChandra-sys/TruvantaAI/issues">Report Issues</a> •
   <a href="CONTRIBUTING.md">Contributing</a> •
   <a href="https://factcheckai-backend.onrender.com/health">Live API</a>
 </p>

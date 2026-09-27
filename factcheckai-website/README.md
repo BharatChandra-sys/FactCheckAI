@@ -1,6 +1,6 @@
-# FactCheckAI Website
+# TruvantaAI Website
 
-Public-facing website for the FactCheckAI browser extension, including privacy policy, terms of service, and feature documentation.
+Public-facing website for the TruvantaAI browser extension, including privacy policy, terms of service, and feature documentation.
 
 ## 🚀 Quick Start
 
@@ -23,7 +23,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the website.
 ## 📁 Project Structure
 
 ```
-factcheckai-website/
+TruvantaAI-website/
 ├── app/
 │   ├── layout.tsx           # Root layout with metadata
 │   ├── page.tsx              # Homepage
@@ -55,7 +55,7 @@ factcheckai-website/
 
 ## 🎨 Design System
 
-Built with **Tailwind CSS v4** using FactCheckAI brand colors:
+Built with **Tailwind CSS v4** using TruvantaAI brand colors:
 
 ### Brand Colors
 - **Primary Accent**: `#c0c1ff` (lavender) - `surface-tint`
@@ -188,7 +188,7 @@ No environment variables required. All configuration is in `next.config.ts` and 
 
 Configured in `app/layout.tsx`:
 
-- **Title**: "FactCheckAI - AI-Powered Fact Verification"
+- **Title**: "TruvantaAI - AI-Powered Fact Verification"
 - **Description**: "Open-source browser extension for instant fact-checking with ML models and evidence retrieval"
 - **Keywords**: fact-checking, AI, machine learning, browser extension, misinformation
 - **Viewport**: Responsive, mobile-optimized
@@ -203,7 +203,7 @@ Configured in `app/layout.tsx`:
 
 ## 🤝 Contributing
 
-This website is part of the FactCheckAI open-source project. Contributions welcome!
+This website is part of the TruvantaAI open-source project. Contributions welcome!
 
 1. Fork the repository
 2. Create a feature branch
@@ -217,11 +217,11 @@ MIT License - see [LICENSE](../LICENSE) file
 
 ## 🔗 Related Links
 
-- **Extension Repository**: [GitHub](https://github.com/yourusername/factcheckai)
-- **Backend API**: [Render.com](https://factcheckai-gjrk.onrender.com)
-- **Documentation**: [Wiki](https://github.com/yourusername/factcheckai/wiki)
-- **Discord**: [Community Server](https://discord.gg/factcheckai)
+- **Extension Repository**: [GitHub](https://github.com/yourusername/TruvantaAI)
+- **Backend API**: [Render.com](https://TruvantaAI-gjrk.onrender.com)
+- **Documentation**: [Wiki](https://github.com/yourusername/TruvantaAI/wiki)
+- **Discord**: [Community Server](https://discord.gg/TruvantaAI)
 
 ---
 
-Built with ❤️ by the FactCheckAI community
+Built with ❤️ by the TruvantaAI community

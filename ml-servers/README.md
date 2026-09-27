@@ -27,7 +27,7 @@ ml-servers/
 ssh ubuntu@your-oracle-ip
 
 # 2. Clone and setup
-git clone https://github.com/YOUR_USERNAME/FactCheckAI.git
+git clone https://github.com/BharatChandra-sys/TruvantaAI.git
 cd FactCheckAI/ml-servers/oracle-deberta
 
 # 3. Create virtual environment
