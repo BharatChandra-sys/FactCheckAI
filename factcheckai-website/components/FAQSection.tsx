@@ -7,15 +7,15 @@ export default function FAQSection() {
 
   const faqs = [
     {
-      question: "How does FactCheckAI differ from other fact-checkers?",
+      question: "How does TruvantaAI differ from other fact-checkers?",
       answer: "Unlike binary fact-checkers, we surface uncertainty when evidence is ambiguous. We use hybrid ML+retrieval instead of purely manual fact-checking, and we provide full transparency with source citations and confidence calibration."
     },
     {
       question: "What data do you collect from users?",
-      answer: "Zero. FactCheckAI operates entirely client-side for claim extraction. Evidence retrieval happens on our backend, but we never log queries, user identities, or browsing history. See our privacy policy for full details."
+      answer: "Zero. TruvantaAI operates entirely client-side for claim extraction. Evidence retrieval happens on our backend, but we never log queries, user identities, or browsing history. See our privacy policy for full details."
     },
     {
-      question: "Can I use FactCheckAI for academic research?",
+      question: "Can I use TruvantaAI for academic research?",
       answer: "Absolutely. All models, datasets, and evaluation scripts are open-source under MIT license. Cite our research papers (linked in GitHub repo) and feel free to extend or fork the project."
     },
     {
@@ -40,7 +40,7 @@ export default function FAQSection() {
         </span>
         <h2 className="text-4xl font-bold text-on-surface">Questions & Answers</h2>
         <p className="text-lg text-on-surface-variant">
-          Common queries about how FactCheckAI works, privacy, accuracy, and contribution guidelines.
+          Common queries about how TruvantaAI works, privacy, accuracy, and contribution guidelines.
         </p>
       </div>
 

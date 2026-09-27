@@ -17,7 +17,7 @@ const CLIENT_NAME = "edge-extension";
 const CLIENT_VERSION = (chrome?.runtime?.getManifest?.().version) || "unknown";
 
 // Debug: log which API is being used
-console.log(`[FactCheckAI] API endpoint: ${API} (prod=${_IS_PROD})`);
+console.log(`[TruvantaAI] API endpoint: ${API} (prod=${_IS_PROD})`);
 // To switch to local dev: localStorage.setItem("FORCE_LOCAL_DEV", "true") then reload
 
 function buildHeaders(extra = {}) {
@@ -45,4 +45,17 @@ async function readJsonSafe(res) {
 	} catch (_) {
 		return null;
 	}
+}
+
+function getApiEndpoint() {
+	return API;
+}
+
+// Export to window for cross-script access
+if (typeof window !== 'undefined') {
+	window.API = API;
+	window.buildHeaders = buildHeaders;
+	window.apiFetch = apiFetch;
+	window.readJsonSafe = readJsonSafe;
+	window.getApiEndpoint = getApiEndpoint;
 }

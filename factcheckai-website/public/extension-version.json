@@ -1,20 +1,21 @@
 {
-  "version": "2.0.0",
-  "buildDate": "2026-09-24",
-  "backendUrl": "https://factcheckai-gjrk.onrender.com",
-  "features": [
-    "Three.js animated background",
-    "Real-time GitHub stats",
-    "Smooth scroll navigation",
-    "Industry-grade SEO",
-    "XSS protection",
-    "Privacy-first design"
+  "name": "TruvantaAI",
+  "version": "2.6.2",
+  "build_date": "2026-09-27",
+  "changes": [
+    "Rebranded from FactCheckAI to TruvantaAI with new logo",
+    "Fixed inline chat claim detection - shows verdict and scores",
+    "Fixed history page loading - sessions load correctly",
+    "Updated all UI elements with new brand identity",
+    "New extension icons with transparent background"
   ],
-  "changelog": [
-    "Updated backend URL to factcheckai-gjrk.onrender.com",
-    "Added comprehensive SEO optimization",
-    "Implemented security headers",
-    "Added structured data for Google",
-    "Optimized for top Google rankings"
-  ]
+  "backend_url": "https://factcheckai-gjrk.onrender.com",
+  "website_url": "https://factcheckaisix.vercel.app",
+  "download_url": "https://factcheckaisix.vercel.app/truvantaai-extension.zip",
+  "branding": {
+    "name": "TruvantaAI",
+    "tagline": "Real-time fake news detection powered by AI",
+    "primary_color": "#fbbf24",
+    "secondary_color": "#f59e0b"
+  }
 }

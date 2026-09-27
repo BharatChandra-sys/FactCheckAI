@@ -1,5 +1,14 @@
+import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'TruvantaAI Privacy Policy - Learn how we protect your data with zero-knowledge fact-checking. GDPR and CCPA compliant.',
+  alternates: {
+    canonical: 'https://truvantaai.tech/privacy',
+  },
+};
 
 export default function PrivacyPolicy() {
   return (
@@ -20,7 +29,7 @@ export default function PrivacyPolicy() {
           <section className="flex flex-col gap-4">
             <h2 className="text-3xl font-bold text-on-surface">Our Commitment to Privacy</h2>
             <p className="text-base text-on-surface-variant leading-relaxed">
-              FactCheckAI is built on the principle of zero-knowledge fact-checking. We believe privacy is a fundamental right, not a premium feature. This policy explains what data we collect (spoiler: almost nothing), how we use it, and your rights under GDPR, CCPA, and other privacy regulations.
+              TruvantaAI is built on the principle of zero-knowledge fact-checking. We believe privacy is a fundamental right, not a premium feature. This policy explains what data we collect (spoiler: almost nothing), how we use it, and your rights under GDPR, CCPA, and other privacy regulations.
             </p>
           </section>
 
@@ -30,7 +39,7 @@ export default function PrivacyPolicy() {
             
             <h3 className="text-xl font-semibold text-on-surface mt-4">1.1 Extension Usage</h3>
             <p className="text-base text-on-surface-variant leading-relaxed">
-              When you use the FactCheckAI browser extension:
+              When you use the TruvantaAI browser extension:
             </p>
             <ul className="list-disc list-inside text-base text-on-surface-variant leading-relaxed space-y-2 ml-4">
               <li><strong>Claim Text:</strong> The text you select for fact-checking is sent to our backend for analysis. We do NOT log or store this text.</li>
@@ -159,7 +168,7 @@ export default function PrivacyPolicy() {
           <section className="flex flex-col gap-4">
             <h2 className="text-3xl font-bold text-on-surface">7. Children's Privacy</h2>
             <p className="text-base text-on-surface-variant leading-relaxed">
-              FactCheckAI does not knowingly collect data from children under 13. If you believe we've inadvertently collected such data, contact us immediately at <a href="mailto:contact@gari.live" className="text-surface-tint hover:underline">contact@gari.live</a>.
+              TruvantaAI does not knowingly collect data from children under 13. If you believe we've inadvertently collected such data, contact us immediately at <a href="mailto:contact@gari.live" className="text-surface-tint hover:underline">contact@gari.live</a>.
             </p>
           </section>
 
@@ -167,7 +176,7 @@ export default function PrivacyPolicy() {
           <section className="flex flex-col gap-4">
             <h2 className="text-3xl font-bold text-on-surface">8. International Data Transfers</h2>
             <p className="text-base text-on-surface-variant leading-relaxed">
-              Our servers are located in the United States. If you access FactCheckAI from outside the US, your data may be transferred to US servers. We comply with EU-US Privacy Shield principles (where applicable) and implement appropriate safeguards.
+              Our servers are located in the United States. If you access TruvantaAI from outside the US, your data may be transferred to US servers. We comply with EU-US Privacy Shield principles (where applicable) and implement appropriate safeguards.
             </p>
           </section>
 

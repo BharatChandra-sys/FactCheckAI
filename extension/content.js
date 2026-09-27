@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Project: FactCheckAI - https://github.com/BharatChandra-sys/fake-news-extension
 (() => {
-  console.log("[FactCheckAI] Content script v2.6.1 loaded");
+  console.log("[TruvantaAI] Content script v2.6.2 loaded");
   
   // Clean up any old tooltips from previous versions
   const oldTooltip = document.getElementById("__factcheck_tooltip__");
@@ -167,7 +167,7 @@
     floatingToolbar.style.opacity = "1";
     floatingToolbar.style.transform = "translateY(0) scale(1)";
     
-    console.log("[FactCheckAI] Floating toolbar shown at", left, top);
+    console.log("[TruvantaAI] Floating toolbar shown at", left, top);
   }
 
   function removeFloatingToolbar() {
@@ -575,15 +575,16 @@
       const loadingId = addChatMessage("assistant", "Analyzing...", true);
       
       try {
-        // Get API endpoint from config
-        const { getApiEndpoint } = await import(chrome.runtime.getURL("popup/config.js"));
-        const API_URL = getApiEndpoint();
+        // Get API endpoint - use production URL directly
+        const API_URL = localStorage.getItem("FORCE_LOCAL_DEV") === "true"
+          ? "http://localhost:8000"
+          : "https://factcheckai-gjrk.onrender.com";
         
         // Get auth token
         const { token } = await chrome.storage.local.get("token");
         
-        // Call chat API with context
-        const response = await fetch(`${API_URL}/chat/message`, {
+        // Call message API with context
+        const response = await fetch(`${API_URL}/message`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -591,8 +592,8 @@
           },
           body: JSON.stringify({
             message: message,
-            context: context,
-            session_id: null  // New conversation
+            history: [{ role: "user", content: context }],
+            session_id: null
           })
         });
         
@@ -602,12 +603,37 @@
         
         const data = await response.json();
         
-        // Remove loading message and add response
+        // Remove loading message
         removeChatMessage(loadingId);
-        addChatMessage("assistant", data.response || "I couldn't analyze that. Please try again.");
+        
+        // Handle both claim and non-claim responses
+        if (data.is_claim) {
+          // This is a fact-check claim - show verdict
+          const verdict = (data.verdict || "uncertain").toUpperCase();
+          const confidence = Math.round((data.confidence || 0) * 100);
+          const verdictEmoji = data.verdict === "fake" ? "❌" : data.verdict === "real" ? "✅" : "⚠️";
+          
+          let replyText = `${verdictEmoji} **${verdict}** (${confidence}% confidence)\n\n`;
+          
+          if (data.explanation) {
+            replyText += `${data.explanation}\n\n`;
+          }
+          
+          if (data.evidence_articles && data.evidence_articles.length > 0) {
+            replyText += `**Sources:**\n`;
+            data.evidence_articles.slice(0, 3).forEach((article, i) => {
+              replyText += `${i + 1}. ${article.title || article.url}\n`;
+            });
+          }
+          
+          addChatMessage("assistant", replyText);
+        } else {
+          // Regular chat response
+          addChatMessage("assistant", data.reply || "I couldn't process that. Please try again.");
+        }
         
       } catch (error) {
-        console.error("[FactCheckAI] Chat error:", error);
+        console.error("[TruvantaAI] Chat error:", error);
         removeChatMessage(loadingId);
         addChatMessage("assistant", "Sorry, I'm having trouble connecting. Please try again later.");
       } finally {
@@ -639,7 +665,7 @@
       inlineChat.querySelector(".chat-input").focus();
     }, 10);
     
-    console.log("[FactCheckAI] Inline chat opened");
+    console.log("[TruvantaAI] Inline chat opened");
   }
 
   function removeInlineAIChat() {
@@ -663,7 +689,7 @@
     messageDiv.className = "chat-message";
     messageDiv.id = messageId;
     messageDiv.innerHTML = `
-      <div class="message-role ${role}">${role === "user" ? "You" : "FactCheckAI"}</div>
+      <div class="message-role ${role}">${role === "user" ? "You" : "TruvantaAI"}</div>
       <div class="message-content ${role} ${isLoading ? 'loading' : ''}">${content}</div>
     `;
     

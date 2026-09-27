@@ -38,7 +38,7 @@ export default function BrowserExtension() {
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          Select any text on any webpage. Right-click to invoke FactCheckAI. Get instant verdicts with sourced evidence—no tab switching required.
+          Select any text on any webpage. Right-click to invoke TruvantaAI. Get instant verdicts with sourced evidence—no tab switching required.
         </motion.p>
       </motion.div>
 
@@ -143,7 +143,7 @@ export default function BrowserExtension() {
                   animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                   transition={{ duration: 0.3, delay: 1.9 }}
                 >
-                  <span className="text-sm font-semibold text-white">FactCheckAI</span>
+                  <span className="text-sm font-semibold text-white">TruvantaAI</span>
                 </motion.div>
                 <motion.div 
                   className="flex items-center gap-2 text-xs"

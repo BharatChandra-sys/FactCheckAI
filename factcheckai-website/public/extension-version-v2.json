@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "build_date": "2026-09-27",
+  "changes": [
+    "Fixed inline chat claim detection - now properly shows verdict and scores for claims",
+    "Fixed history page stuck on loading - sessions now load correctly",
+    "Changed API endpoint from /chat/message to /message (correct endpoint)",
+    "Added proper handling for both claim analysis and conversational chat",
+    "Exported config.js helper functions to global scope for cross-script access"
+  ],
+  "backend_url": "https://factcheckai-gjrk.onrender.com",
+  "fixes": {
+    "issue_1": "Inline chat now detects claims and shows verdict/confidence/sources",
+    "issue_2": "History page loads chat sessions instead of being stuck on 'Loading...'"
+  },
+  "files_modified": [
+    "extension/popup/config.js",
+    "extension/content.js"
+  ]
+}

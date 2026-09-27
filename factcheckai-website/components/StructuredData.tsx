@@ -5,11 +5,11 @@ export default function StructuredData() {
       // WebApplication
       {
         '@type': 'WebApplication',
-        '@id': 'https://factcheckaisix.vercel.app/#webapp',
-        name: 'FactCheckAI',
+        '@id': 'https://truvantaai.tech/#webapp',
+        name: 'TruvantaAI',
         alternateName: 'Fact Check AI',
         description: 'AI-powered browser extension for real-time fact verification. Detect fake news, misinformation, and false claims instantly while browsing.',
-        url: 'https://factcheckaisix.vercel.app',
+        url: 'https://truvantaai.tech',
         applicationCategory: 'BrowserApplication',
         operatingSystem: 'Chrome, Microsoft Edge, Firefox',
         browserRequirements: 'Requires Chrome 88+, Edge 88+, or Firefox 85+',
@@ -41,20 +41,20 @@ export default function StructuredData() {
           'Privacy-first design',
           'Offline capability',
         ],
-        screenshot: 'https://factcheckaisix.vercel.app/og-image.png',
-        downloadUrl: 'https://factcheckaisix.vercel.app/install',
-        installUrl: 'https://factcheckaisix.vercel.app/install',
+        screenshot: 'https://truvantaai.tech/og-image.png',
+        downloadUrl: 'https://truvantaai.tech/install',
+        installUrl: 'https://truvantaai.tech/install',
       },
       // Organization
       {
         '@type': 'Organization',
-        '@id': 'https://factcheckaisix.vercel.app/#organization',
-        name: 'FactCheckAI',
-        legalName: 'FactCheckAI',
-        url: 'https://factcheckaisix.vercel.app',
+        '@id': 'https://truvantaai.tech/#organization',
+        name: 'TruvantaAI',
+        legalName: 'TruvantaAI',
+        url: 'https://truvantaai.tech',
         logo: {
           '@type': 'ImageObject',
-          url: 'https://factcheckaisix.vercel.app/icon.svg',
+          url: 'https://truvantaai.tech/icon.svg',
           width: 512,
           height: 512,
         },
@@ -65,38 +65,38 @@ export default function StructuredData() {
             '@type': 'ContactPoint',
             email: 'contact@gari.live',
             contactType: 'Customer Support',
-            url: 'https://factcheckaisix.vercel.app/support',
+            url: 'https://truvantaai.tech/support',
             availableLanguage: ['English'],
           },
           {
             '@type': 'ContactPoint',
             email: 'contact@gari.live',
             contactType: 'Technical Support',
-            url: 'https://factcheckaisix.vercel.app/support',
+            url: 'https://truvantaai.tech/support',
           },
         ],
         sameAs: [
-          'https://github.com/BharatChandra-sys/FactCheckAI',
+          'https://github.com/BharatChandra-sys/TruvantaAI',
           'https://gari.live',
         ],
       },
       // WebSite
       {
         '@type': 'WebSite',
-        '@id': 'https://factcheckaisix.vercel.app/#website',
-        name: 'FactCheckAI',
+        '@id': 'https://truvantaai.tech/#website',
+        name: 'TruvantaAI',
         alternateName: 'Fact Check AI',
-        url: 'https://factcheckaisix.vercel.app',
-        description: 'Official website for FactCheckAI browser extension - AI-powered fact verification tool',
+        url: 'https://truvantaai.tech',
+        description: 'Official website for TruvantaAI browser extension - AI-powered fact verification tool',
         publisher: {
-          '@id': 'https://factcheckaisix.vercel.app/#organization',
+          '@id': 'https://truvantaai.tech/#organization',
         },
         inLanguage: 'en-US',
         potentialAction: {
           '@type': 'SearchAction',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: 'https://factcheckaisix.vercel.app/search?q={search_term_string}',
+            urlTemplate: 'https://truvantaai.tech/search?q={search_term_string}',
           },
           'query-input': 'required name=search_term_string',
         },
@@ -104,8 +104,8 @@ export default function StructuredData() {
       // SoftwareApplication
       {
         '@type': 'SoftwareApplication',
-        '@id': 'https://factcheckaisix.vercel.app/#software',
-        name: 'FactCheckAI Browser Extension',
+        '@id': 'https://truvantaai.tech/#software',
+        name: 'TruvantaAI Browser Extension',
         applicationCategory: 'BrowserApplication',
         applicationSubCategory: 'Fact Checking Tool',
         operatingSystem: 'Chrome OS, Windows, macOS, Linux',
@@ -114,10 +114,10 @@ export default function StructuredData() {
         datePublished: '2024-01-01',
         dateModified: new Date().toISOString(),
         author: {
-          '@id': 'https://factcheckaisix.vercel.app/#organization',
+          '@id': 'https://truvantaai.tech/#organization',
         },
         publisher: {
-          '@id': 'https://factcheckaisix.vercel.app/#organization',
+          '@id': 'https://truvantaai.tech/#organization',
         },
         offers: {
           '@type': 'Offer',
@@ -151,69 +151,69 @@ export default function StructuredData() {
       // BreadcrumbList
       {
         '@type': 'BreadcrumbList',
-        '@id': 'https://factcheckaisix.vercel.app/#breadcrumb',
+        '@id': 'https://truvantaai.tech/#breadcrumb',
         itemListElement: [
           {
             '@type': 'ListItem',
             position: 1,
             name: 'Home',
-            item: 'https://factcheckaisix.vercel.app',
+            item: 'https://truvantaai.tech',
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Install',
-            item: 'https://factcheckaisix.vercel.app/install',
+            item: 'https://truvantaai.tech/install',
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: 'Privacy Policy',
-            item: 'https://factcheckaisix.vercel.app/privacy',
+            item: 'https://truvantaai.tech/privacy',
           },
           {
             '@type': 'ListItem',
             position: 4,
             name: 'Support',
-            item: 'https://factcheckaisix.vercel.app/support',
+            item: 'https://truvantaai.tech/support',
           },
         ],
       },
       // FAQ Page
       {
         '@type': 'FAQPage',
-        '@id': 'https://factcheckaisix.vercel.app/#faq',
+        '@id': 'https://truvantaai.tech/#faq',
         mainEntity: [
           {
             '@type': 'Question',
-            name: 'What is FactCheckAI?',
+            name: 'What is TruvantaAI?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'FactCheckAI is a free browser extension that uses advanced AI to verify claims in real-time. It helps you detect fake news, misinformation, and false claims while browsing the web.',
+              text: 'TruvantaAI is a free browser extension that uses advanced AI to verify claims in real-time. It helps you detect fake news, misinformation, and false claims while browsing the web.',
             },
           },
           {
             '@type': 'Question',
-            name: 'How does FactCheckAI work?',
+            name: 'How does TruvantaAI work?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'FactCheckAI uses machine learning models to analyze claims, retrieves evidence from trusted sources, and provides verification with confidence scores. It works in real-time as you browse.',
+              text: 'TruvantaAI uses machine learning models to analyze claims, retrieves evidence from trusted sources, and provides verification with confidence scores. It works in real-time as you browse.',
             },
           },
           {
             '@type': 'Question',
-            name: 'Is FactCheckAI free?',
+            name: 'Is TruvantaAI free?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Yes, FactCheckAI is completely free to use. There are no hidden costs, subscriptions, or premium tiers.',
+              text: 'Yes, TruvantaAI is completely free to use. There are no hidden costs, subscriptions, or premium tiers.',
             },
           },
           {
             '@type': 'Question',
-            name: 'Which browsers support FactCheckAI?',
+            name: 'Which browsers support TruvantaAI?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'FactCheckAI works on Google Chrome, Microsoft Edge, and Firefox. It requires Chrome 88+, Edge 88+, or Firefox 85+.',
+              text: 'TruvantaAI works on Google Chrome, Microsoft Edge, and Firefox. It requires Chrome 88+, Edge 88+, or Firefox 85+.',
             },
           },
           {
@@ -221,7 +221,7 @@ export default function StructuredData() {
             name: 'Is my data private?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Yes. FactCheckAI is privacy-first. We do not collect, store, or share your browsing data. All fact-checking happens securely.',
+              text: 'Yes. TruvantaAI is privacy-first. We do not collect, store, or share your browsing data. All fact-checking happens securely.',
             },
           },
         ],

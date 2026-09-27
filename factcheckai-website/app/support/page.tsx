@@ -1,5 +1,14 @@
+import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+export const metadata: Metadata = {
+  title: 'Support & Contact',
+  description: 'Get help with TruvantaAI, report issues, or contribute to the project. Contact our support team.',
+  alternates: {
+    canonical: 'https://truvantaai.tech/support',
+  },
+};
 
 export default function Support() {
   return (
@@ -60,7 +69,7 @@ export default function Support() {
               <div>
                 <h3 className="text-lg font-semibold text-on-surface mb-2">How do I install the extension?</h3>
                 <p className="text-base text-on-surface-variant leading-relaxed">
-                  Visit the <a href="https://chrome.google.com/webstore" target="_blank" className="text-surface-tint hover:underline">Chrome Web Store</a> or <a href="https://microsoftedge.microsoft.com/addons" target="_blank" className="text-surface-tint hover:underline">Microsoft Edge Add-ons</a> and search for "FactCheckAI". Click "Add" to install.
+                  Visit the <a href="https://chrome.google.com/webstore" target="_blank" className="text-surface-tint hover:underline">Chrome Web Store</a> or <a href="https://microsoftedge.microsoft.com/addons" target="_blank" className="text-surface-tint hover:underline">Microsoft Edge Add-ons</a> and search for "TruvantaAI". Click "Add" to install.
                 </p>
               </div>
 
@@ -72,7 +81,7 @@ export default function Support() {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-on-surface mb-2">Can I use FactCheckAI offline?</h3>
+                <h3 className="text-lg font-semibold text-on-surface mb-2">Can I use TruvantaAI offline?</h3>
                 <p className="text-base text-on-surface-variant leading-relaxed">
                   No. Fact-checking requires querying our backend evidence database and ML models. A network connection is required.
                 </p>
@@ -86,7 +95,7 @@ export default function Support() {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-on-surface mb-2">Is FactCheckAI free?</h3>
+                <h3 className="text-lg font-semibold text-on-surface mb-2">Is TruvantaAI free?</h3>
                 <p className="text-base text-on-surface-variant leading-relaxed">
                   Yes, completely free. No subscriptions, no premium tiers, no ads.
                 </p>

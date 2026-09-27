@@ -37,7 +37,7 @@ export default function UncertaintySection() {
         </span>
         <h2 className="text-4xl font-bold text-on-surface">Honest about what we don't know</h2>
         <p className="text-lg text-on-surface-variant">
-          Unlike binary fact-checkers, FactCheckAI surfaces uncertainty when evidence is conflicting or insufficient. Confidence scores are calibrated to reflect epistemic limitations.
+          Unlike binary fact-checkers, TruvantaAI surfaces uncertainty when evidence is conflicting or insufficient. Confidence scores are calibrated to reflect epistemic limitations.
         </p>
       </div>
 

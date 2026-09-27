@@ -19,16 +19,17 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://factcheckaisix.vercel.app'),
+  metadataBase: new URL('https://truvantaai.tech'),
   title: {
-    default: "FactCheckAI - AI-Powered Fact Verification Extension | Stop Misinformation",
-    template: "%s | FactCheckAI"
+    default: "TruvantaAI - AI-Powered Fact Verification Extension | Stop Misinformation",
+    template: "%s | TruvantaAI"
   },
-  description: "FactCheckAI is a powerful browser extension that verifies claims in real-time using advanced AI models. Detect fake news, misinformation, and false claims instantly while browsing. Free fact-checking tool with evidence-based verification.",
+  description: "TruvantaAI is a powerful browser extension that verifies claims in real-time using advanced AI models. Detect fake news, misinformation, and false claims instantly while browsing. Free fact-checking tool with evidence-based verification.",
   keywords: [
     "fact check",
     "fact checker",
-    "factcheck ai",
+    "truvanta ai",
+    "truvantaai",
     "fact checking",
     "ai fact checker",
     "fake news detector",
@@ -47,10 +48,10 @@ export const metadata: Metadata = {
     "evidence based",
     "credibility assessment"
   ],
-  authors: [{ name: "FactCheckAI Team", url: "https://factcheckaisix.vercel.app" }],
-  creator: "FactCheckAI",
-  publisher: "FactCheckAI",
-  applicationName: "FactCheckAI",
+  authors: [{ name: "TruvantaAI Team", url: "https://truvantaai.tech" }],
+  creator: "TruvantaAI",
+  publisher: "TruvantaAI",
+  applicationName: "TruvantaAI",
   category: "productivity",
   classification: "Browser Extension",
   robots: {
@@ -67,37 +68,38 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://factcheckaisix.vercel.app",
-    siteName: "FactCheckAI",
-    title: "FactCheckAI - AI-Powered Fact Verification Extension",
+    url: "https://truvantaai.tech",
+    siteName: "TruvantaAI",
+    title: "TruvantaAI - AI-Powered Fact Verification Extension",
     description: "Verify claims instantly with our AI-powered browser extension. Stop misinformation before it spreads. Evidence-based fact-checking at your fingertips.",
     images: [
       {
-        url: '/og-image.png',
+        url: '/truvanta-logo-transparent.png',
         width: 1200,
         height: 630,
-        alt: 'FactCheckAI - AI-Powered Fact Verification',
+        alt: 'TruvantaAI - AI-Powered Fact Verification',
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "FactCheckAI - AI-Powered Fact Verification",
+    title: "TruvantaAI - AI-Powered Fact Verification",
     description: "Verify claims instantly. Stop misinformation. Free AI-powered browser extension.",
-    images: ['/og-image.png'],
+    images: ['/truvanta-logo-transparent.png'],
   },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
     ],
   },
   manifest: '/manifest.json',
   alternates: {
-    canonical: 'https://factcheckaisix.vercel.app',
+    canonical: 'https://truvantaai.tech',
   },
   other: {
     'google-site-verification': 'google5834a36d31acb362',
@@ -136,7 +138,7 @@ export default function RootLayout({
         {/* Apple mobile web app */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="FactCheckAI" />
+        <meta name="apple-mobile-web-app-title" content="TruvantaAI" />
         
         {/* Microsoft application */}
         <meta name="msapplication-TileColor" content="#fbbf24" />

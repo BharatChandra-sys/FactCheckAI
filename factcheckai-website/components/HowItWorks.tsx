@@ -44,7 +44,7 @@ export default function HowItWorks() {
         <span className="text-sm uppercase tracking-widest text-surface-tint font-mono">
           02 // Pipeline Architecture
         </span>
-        <h2 className="text-4xl font-bold text-on-surface">How FactCheckAI verifies information</h2>
+        <h2 className="text-4xl font-bold text-on-surface">How TruvantaAI verifies information</h2>
         <p className="text-lg text-on-surface-variant">
           Every evaluation traverses a 4-step forensic verification loop designed to prevent hallucinations and establish an immutable chain of custody for sources.
         </p>

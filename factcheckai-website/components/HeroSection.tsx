@@ -31,7 +31,7 @@ export default function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            FactCheckAI analyzes claims in real-time using advanced AI models and cross-references millions of trusted sources. Know what's true while you browse.
+            TruvantaAI analyzes claims in real-time using advanced AI models and cross-references millions of trusted sources. Know what's true while you browse.
           </motion.p>
 
           {/* Dual CTA */}
@@ -83,7 +83,7 @@ export default function HeroSection() {
             {/* Extension Header */}
             <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-white">FactCheckAI</span>
+                <span className="text-sm font-semibold text-white">TruvantaAI</span>
                 <span className="text-xs bg-surface-container-highest text-on-surface-variant px-1.5 py-0.5 rounded">
                   Extension
                 </span>

@@ -198,7 +198,7 @@ async function newChat() {
   currentSessionId = null;
   history = [];
   chrome.storage.local.remove("currentSessionId");
-  setChatTitle("FactCheckAI");
+  setChatTitle("TruvantaAI");
   chatContainer.innerHTML = "";
   showWelcome();
   closeSidebar();
@@ -1228,8 +1228,8 @@ async function send() {
 function setChatTitle(title) {
   const el = document.getElementById("chat-title");
   if (!el) return;
-  if (!title || title === "FactCheckAI") {
-    el.innerHTML = '<span class="brand-main">FactCheck</span><span class="brand-ai"> AI</span>';
+  if (!title || title === "TruvantaAI") {
+    el.innerHTML = '<span class="brand-main">Truvanta</span><span class="brand-ai">AI</span>';
   } else {
     // Session title — plain text, no brand styling
     el.textContent = title;

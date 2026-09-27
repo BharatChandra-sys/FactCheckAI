@@ -50,7 +50,7 @@ export default function Header() {
           >
             Technology
           </a>
-          <Link href="https://github.com/BharatChandra-sys/FactCheckAI" target="_blank" className="text-sm text-on-surface-variant hover:text-white transition-colors py-1.5 px-2">
+          <Link href="https://github.com/BharatChandra-sys/TruvantaAI" target="_blank" className="text-sm text-on-surface-variant hover:text-white transition-colors py-1.5 px-2">
             GitHub
           </Link>
           <Link href="/privacy" className="text-sm text-on-surface-variant hover:text-white transition-colors py-1.5 px-2">

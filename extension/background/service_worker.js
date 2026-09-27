@@ -33,7 +33,7 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
   // Context menu
   chrome.contextMenus.create({
     id:       "analyze-fake-news",
-    title:    "TruthScan with FactCheckAI",
+    title:    "TruthScan with TruvantaAI",
     contexts: ["selection"],
   });
 
@@ -49,7 +49,7 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
     chrome.notifications.create("factcheck-welcome", {
       type:    "basic",
       iconUrl: chrome.runtime.getURL("icons/icon128.png"),
-      title:   "FactCheckAI installed",
+      title:   "TruvantaAI installed",
       message: "Press Ctrl+Shift+Y to open, or right-click any text to fact-check.",
     });
   }
@@ -140,7 +140,7 @@ function notify(message) {
   chrome.notifications.create({
     type:    "basic",
     iconUrl: chrome.runtime.getURL("icons/icon48.png"),
-    title:   "FactCheckAI",
+    title:   "TruvantaAI",
     message,
   });
 }

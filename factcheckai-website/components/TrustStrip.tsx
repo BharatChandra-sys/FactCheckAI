@@ -23,12 +23,12 @@ export default function TrustStrip() {
     async function fetchGitHubStats() {
       try {
         // Fetch repo stats
-        const repoResponse = await fetch('https://api.github.com/repos/BharatChandra-sys/FactCheckAI');
+        const repoResponse = await fetch('https://api.github.com/repos/BharatChandra-sys/TruvantaAI');
         if (repoResponse.ok) {
           const repoData = await repoResponse.json();
           
           // Fetch contributors count
-          const contributorsResponse = await fetch('https://api.github.com/repos/BharatChandra-sys/FactCheckAI/contributors');
+          const contributorsResponse = await fetch('https://api.github.com/repos/BharatChandra-sys/TruvantaAI/contributors');
           const contributorsData = contributorsResponse.ok ? await contributorsResponse.json() : [];
           
           setStats({

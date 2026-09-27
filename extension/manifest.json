@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "FactCheckAI",
-  "version": "2.6.1",
-  "description": "FactCheckAI — Real-time fake news detection powered by AI",
+  "name": "TruvantaAI",
+  "version": "2.6.2",
+  "description": "TruvantaAI — Real-time fake news detection powered by AI",
 
   "permissions": [
     "storage",
@@ -20,7 +20,7 @@
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
       },
-      "description": "Open FactCheckAI popup"
+      "description": "Open TruvantaAI popup"
     },
     "analyze-selected-text": {
       "suggested_key": {
@@ -64,7 +64,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "FactCheckAI — Fact Checker"
+    "default_title": "TruvantaAI — Fact Checker"
   },
 
   "side_panel": {

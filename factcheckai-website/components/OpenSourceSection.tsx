@@ -45,7 +45,7 @@ export default function OpenSourceSection() {
         </div>
         <div className="flex flex-wrap gap-3 shrink-0">
           <a
-            href="https://github.com/yourusername/factcheckai"
+            href="https://github.com/yourusername/TruvantaAI"
             target="_blank"
             className="inline-flex items-center gap-2 bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-sm font-medium px-4 py-2 rounded transition-colors"
           >
@@ -55,7 +55,7 @@ export default function OpenSourceSection() {
             View Repository
           </a>
           <a
-            href="https://github.com/yourusername/factcheckai/blob/main/CONTRIBUTING.md"
+            href="https://github.com/yourusername/TruvantaAI/blob/main/CONTRIBUTING.md"
             target="_blank"
             className="inline-flex items-center gap-2 bg-primary-container hover:bg-surface-tint text-on-primary-fixed text-sm font-semibold px-4 py-2 rounded transition-colors"
           >

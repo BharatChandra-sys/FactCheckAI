@@ -99,7 +99,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-outline-variant/30 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-on-surface-variant">
-            © {new Date().getFullYear()} FactCheckAI. All rights reserved.
+            © {new Date().getFullYear()} TruvantaAI. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm text-on-surface-variant">
             <span className="flex items-center gap-2">

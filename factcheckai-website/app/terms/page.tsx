@@ -1,5 +1,14 @@
+import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service',
+  description: 'TruvantaAI Terms of Service - Review our terms and conditions for using the browser extension.',
+  alternates: {
+    canonical: 'https://truvantaai.tech/terms',
+  },
+};
 
 export default function TermsOfService() {
   return (
@@ -20,7 +29,7 @@ export default function TermsOfService() {
           <section className="flex flex-col gap-4">
             <h2 className="text-3xl font-bold text-on-surface">1. Acceptance of Terms</h2>
             <p className="text-base text-on-surface-variant leading-relaxed">
-              By installing or using FactCheckAI ("the Service"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Service.
+              By installing or using TruvantaAI ("the Service"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Service.
             </p>
           </section>
 
@@ -28,7 +37,7 @@ export default function TermsOfService() {
           <section className="flex flex-col gap-4">
             <h2 className="text-3xl font-bold text-on-surface">2. Service Description</h2>
             <p className="text-base text-on-surface-variant leading-relaxed">
-              FactCheckAI is an open-source browser extension that uses machine learning and evidence retrieval to assess the credibility of user-submitted claims. The Service provides:
+              TruvantaAI is an open-source browser extension that uses machine learning and evidence retrieval to assess the credibility of user-submitted claims. The Service provides:
             </p>
             <ul className="list-disc list-inside text-base text-on-surface-variant leading-relaxed space-y-2 ml-4">
               <li>Automated fact-checking analysis using ML models</li>
@@ -43,7 +52,7 @@ export default function TermsOfService() {
             <h2 className="text-3xl font-bold text-on-surface">3. User Responsibilities</h2>
             
             <h3 className="text-xl font-semibold text-on-surface mt-4">3.1 Appropriate Use</h3>
-            <p className="text-base text-on-surface-variant leading-relaxed">You agree to use FactCheckAI only for lawful purposes. You will NOT:</p>
+            <p className="text-base text-on-surface-variant leading-relaxed">You agree to use TruvantaAI only for lawful purposes. You will NOT:</p>
             <ul className="list-disc list-inside text-base text-on-surface-variant leading-relaxed space-y-2 ml-4">
               <li>Submit malicious content, spam, or abusive material</li>
               <li>Attempt to reverse-engineer, decompile, or extract proprietary models</li>
@@ -54,7 +63,7 @@ export default function TermsOfService() {
 
             <h3 className="text-xl font-semibold text-on-surface mt-6">3.2 Critical Decisions</h3>
             <p className="text-base text-on-surface-variant leading-relaxed">
-              FactCheckAI is a research tool designed to assist critical thinking—NOT replace it. You acknowledge that:
+              TruvantaAI is a research tool designed to assist critical thinking—NOT replace it. You acknowledge that:
             </p>
             <ul className="list-disc list-inside text-base text-on-surface-variant leading-relaxed space-y-2 ml-4">
               <li>AI models can make errors, especially on emerging or niche topics</li>
@@ -69,7 +78,7 @@ export default function TermsOfService() {
             
             <h3 className="text-xl font-semibold text-on-surface mt-4">4.1 Open-Source License</h3>
             <p className="text-base text-on-surface-variant leading-relaxed">
-              FactCheckAI's source code is licensed under the <strong>MIT License</strong>. You are free to use, modify, and distribute the code subject to the license terms: <a href="https://opensource.org/licenses/MIT" target="_blank" className="text-surface-tint hover:underline">opensource.org/licenses/MIT</a>
+              TruvantaAI's source code is licensed under the <strong>MIT License</strong>. You are free to use, modify, and distribute the code subject to the license terms: <a href="https://opensource.org/licenses/MIT" target="_blank" className="text-surface-tint hover:underline">opensource.org/licenses/MIT</a>
             </p>
 
             <h3 className="text-xl font-semibold text-on-surface mt-6">4.2 User-Submitted Content</h3>
@@ -79,7 +88,7 @@ export default function TermsOfService() {
 
             <h3 className="text-xl font-semibold text-on-surface mt-6">4.3 Trademarks</h3>
             <p className="text-base text-on-surface-variant leading-relaxed">
-              "FactCheckAI," our logo, and branding are trademarks. You may NOT use these marks without prior written permission, except as required to identify the software in compliance with the MIT License.
+              "TruvantaAI," our logo, and branding are trademarks. You may NOT use these marks without prior written permission, except as required to identify the software in compliance with the MIT License.
             </p>
           </section>
 
@@ -99,7 +108,7 @@ export default function TermsOfService() {
 
             <h3 className="text-xl font-semibold text-on-surface mt-6">5.2 Limitation of Liability</h3>
             <p className="text-base text-on-surface-variant leading-relaxed">
-              TO THE MAXIMUM EXTENT PERMITTED BY LAW, FactCheckAI and its contributors SHALL NOT BE LIABLE for:
+              TO THE MAXIMUM EXTENT PERMITTED BY LAW, TruvantaAI and its contributors SHALL NOT BE LIABLE for:
             </p>
             <ul className="list-disc list-inside text-base text-on-surface-variant leading-relaxed space-y-2 ml-4">
               <li>Indirect, incidental, or consequential damages</li>

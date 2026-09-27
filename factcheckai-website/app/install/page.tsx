@@ -1,33 +1,42 @@
-'use client';
-
+import type { Metadata } from 'next';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+export const metadata: Metadata = {
+  title: 'Installation Guide',
+  description: 'Step-by-step guide to install TruvantaAI browser extension on Chrome and Edge.',
+  alternates: {
+    canonical: 'https://truvantaai.tech/install',
+  },
+};
 
 export default function InstallGuidePage() {
   const steps = [
     {
       number: 1,
       title: 'Download the Extension',
-      description: 'Click the button below to download the FactCheckAI extension ZIP file.',
+      description: 'Click the button below to download the TruvantaAI extension ZIP file.',
       action: (
-        <motion.a
-          href="/factcheckai-extension.zip"
-          download
-          className="inline-flex items-center gap-2 bg-brand-yellow hover:bg-brand-orange text-black text-base font-semibold px-6 py-3 rounded transition-colors shadow-lg"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <span className="material-symbols-outlined text-xl">download</span>
-          <span>Download Extension</span>
-        </motion.a>
+        <div className="space-y-3">
+          <motion.a
+            href="/truvantaai-extension.zip"
+            download
+            className="inline-flex items-center gap-2 bg-brand-yellow hover:bg-brand-orange text-black text-base font-semibold px-6 py-3 rounded transition-colors shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <span className="material-symbols-outlined text-xl">download</span>
+            <span>Download Extension</span>
+          </motion.a>
+        </div>
       ),
       image: (
         <div className="bg-surface-container rounded-lg p-8 border border-brand-yellow/30">
           <div className="flex flex-col items-center gap-4">
             <span className="material-symbols-outlined text-6xl text-brand-yellow">folder_zip</span>
-            <span className="text-sm text-on-surface-variant font-mono">factcheckai-extension.zip</span>
+            <span className="text-sm text-on-surface-variant font-mono">TruvantaAI-extension.zip</span>
           </div>
         </div>
       )
@@ -41,14 +50,14 @@ export default function InstallGuidePage() {
           <div className="space-y-3">
             <div className="flex items-center gap-3 bg-surface-container-low p-3 rounded">
               <span className="material-symbols-outlined text-brand-yellow">folder_zip</span>
-              <span className="text-sm">factcheckai-extension.zip</span>
+              <span className="text-sm">TruvantaAI-extension.zip</span>
             </div>
             <div className="flex justify-center">
               <span className="material-symbols-outlined text-2xl text-on-surface-variant">arrow_downward</span>
             </div>
             <div className="flex items-center gap-3 bg-surface-container-low p-3 rounded">
               <span className="material-symbols-outlined text-secondary">folder_open</span>
-              <span className="text-sm">factcheckai-extension/</span>
+              <span className="text-sm">TruvantaAI-extension/</span>
             </div>
           </div>
         </div>
@@ -99,7 +108,7 @@ export default function InstallGuidePage() {
               <span>Load unpacked</span>
             </button>
             <div className="text-xs text-on-surface-variant text-center">
-              Select the folder: factcheckai-extension/extension
+              Select the folder: TruvantaAI-extension/extension
             </div>
           </div>
         </div>
@@ -108,7 +117,7 @@ export default function InstallGuidePage() {
     {
       number: 6,
       title: 'Pin the Extension',
-      description: 'Click the puzzle icon in Chrome toolbar, find FactCheckAI, and click the pin icon.',
+      description: 'Click the puzzle icon in Chrome toolbar, find TruvantaAI, and click the pin icon.',
       image: (
         <div className="bg-surface-container rounded-lg p-6 border border-outline-variant/30">
           <div className="flex items-center justify-center gap-4">
@@ -124,7 +133,7 @@ export default function InstallGuidePage() {
     {
       number: 7,
       title: 'Start Fact-Checking!',
-      description: 'Select any text on a webpage, right-click, and choose "Check with FactCheckAI".',
+      description: 'Select any text on a webpage, right-click, and choose "Check with TruvantaAI".',
       image: (
         <div className="bg-surface-container rounded-lg p-6 border border-brand-yellow/30">
           <div className="flex flex-col items-center gap-3">
@@ -163,7 +172,7 @@ export default function InstallGuidePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              Install FactCheck<span className="text-brand-yellow">AI</span>
+              Install Truvanta<span className="text-brand-yellow">AI</span>
             </motion.h1>
             <motion.p
               className="text-lg text-on-surface-variant"
