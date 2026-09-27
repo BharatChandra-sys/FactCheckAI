@@ -17,7 +17,7 @@
 
 // ── Backend URL (reads from storage if overridden in settings) ────────────────
 // Default points to production Render deployment
-let API_BASE = "https://factcheckai-coq3.onrender.com";
+let API_BASE = "https://factcheckai-gjrk.onrender.com";
 
 chrome.storage.local.get("apiBase", ({ apiBase }) => {
   if (apiBase) API_BASE = apiBase;

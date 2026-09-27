@@ -218,7 +218,7 @@ MIT License - see [LICENSE](../LICENSE) file
 ## 🔗 Related Links
 
 - **Extension Repository**: [GitHub](https://github.com/yourusername/factcheckai)
-- **Backend API**: [Render.com](https://factcheckai-coq3.onrender.com)
+- **Backend API**: [Render.com](https://factcheckai-gjrk.onrender.com)
 - **Documentation**: [Wiki](https://github.com/yourusername/factcheckai/wiki)
 - **Discord**: [Community Server](https://discord.gg/factcheckai)
 

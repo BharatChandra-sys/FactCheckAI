@@ -9,7 +9,7 @@ const _FORCE_LOCAL = localStorage.getItem("FORCE_LOCAL_DEV") === "true";
 const _IS_PROD = !_FORCE_LOCAL;
 
 const API = _IS_PROD
-  ? "https://factcheckai-coq3.onrender.com"   // Production (Render)
+  ? "https://factcheckai-gjrk.onrender.com"   // Production (Render)
   : "http://localhost:8000";                   // Local dev (set FORCE_LOCAL_DEV=true in console)
 
 const API_TIMEOUT_MS = 20000;
