@@ -13,7 +13,7 @@ export default function Header() {
         <div className="flex items-center gap-4 shrink-0">
           <Link href="/" className="flex items-center gap-3 group focus:outline-none">
             <span className="text-xl font-bold tracking-tight text-white">
-              Truvanta<span className="text-brand-yellow">AI</span>
+              Truvanta <span className="text-brand-yellow">AI</span>
             </span>
           </Link>
         </div>
