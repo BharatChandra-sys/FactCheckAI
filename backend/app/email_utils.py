@@ -137,23 +137,42 @@ def send_otp_email(to_email: str, otp: str) -> bool:
 </body>
 </html>"""
 
-    resp = requests.post(
-        BREVO_API_URL,
-        headers={
-            "api-key": BREVO_API_KEY,
-            "Content-Type": "application/json",
-        },
-        json={
-            "sender":      {"name": FROM_NAME, "email": FROM_EMAIL},
-            "to":          [{"email": to_email}],
-            "subject":     f"Your verification code is {otp}",
-            "htmlContent": html,
-        },
-        timeout=15,
-    )
-
-    if resp.status_code not in (200, 201):
-        raise RuntimeError(f"Brevo API error {resp.status_code}: {resp.text}")
-
-    logger.info("OTP email sent via Brevo to %s", to_email)
-    return True
+    logger.info("Attempting to send OTP email to %s via Brevo", to_email)
+    
+    payload = {
+        "sender":      {"name": FROM_NAME, "email": FROM_EMAIL},
+        "to":          [{"email": to_email}],
+        "subject":     f"Your verification code is {otp}",
+        "htmlContent": html,
+    }
+    
+    try:
+        resp = requests.post(
+            BREVO_API_URL,
+            headers={
+                "api-key": BREVO_API_KEY,
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=15,
+        )
+        
+        logger.info("Brevo API response: status=%d", resp.status_code)
+        
+        if resp.status_code not in (200, 201):
+            logger.error("Brevo API error %d: %s", resp.status_code, resp.text)
+            raise RuntimeError(f"Brevo API error {resp.status_code}: {resp.text}")
+        
+        # Log the message ID from Brevo response
+        try:
+            response_data = resp.json()
+            message_id = response_data.get("messageId", "unknown")
+            logger.info("OTP email sent successfully to %s (messageId: %s)", to_email, message_id)
+        except:
+            logger.info("OTP email sent successfully to %s", to_email)
+        
+        return True
+        
+    except requests.exceptions.RequestException as e:
+        logger.error("Network error sending OTP to %s: %s", to_email, str(e))
+        raise RuntimeError(f"Failed to send email: {str(e)}")
