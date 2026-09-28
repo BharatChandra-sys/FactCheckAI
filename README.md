@@ -3,7 +3,7 @@
 
 <p align="center">
   <img src="extension\icons\truvanta-logo.png" alt="TruvantaAI" width="128" height="128"/>
-  <h1 align="center">FactCheckAI</h1>
+  <h1 align="center">TruvantaAI</h1>
 </p>
 
 <p align="center">
