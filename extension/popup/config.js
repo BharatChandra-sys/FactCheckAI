@@ -12,7 +12,7 @@ const API = _IS_PROD
   ? "https://factcheckai-gjrk.onrender.com"   // Production (Render)
   : "http://localhost:8000";                   // Local dev (set FORCE_LOCAL_DEV=true in console)
 
-const API_TIMEOUT_MS = 20000;
+const API_TIMEOUT_MS = 45000;  // 45s for AI reasoning tasks
 const CLIENT_NAME = "edge-extension";
 const CLIENT_VERSION = (chrome?.runtime?.getManifest?.().version) || "unknown";
 
