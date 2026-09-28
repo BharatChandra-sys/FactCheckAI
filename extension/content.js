@@ -578,7 +578,7 @@
         // Get API endpoint - use production URL directly
         const API_URL = localStorage.getItem("FORCE_LOCAL_DEV") === "true"
           ? "http://localhost:8000"
-          : "https://TruvantaAI-gjrk.onrender.com";
+          : "https://factcheckai-gjrk.onrender.com";
         
         // Get auth token
         const { token } = await chrome.storage.local.get("token");
