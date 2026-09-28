@@ -156,6 +156,7 @@ async function switchSession(id) {
 }
 
 async function loadSessionMessages(sessionId) {
+  console.log(`[TruvantaAI] Loading session messages for ID: ${sessionId}`);
   // Show skeleton while loading
   chatContainer.innerHTML = `
     <div class="skeleton-wrap">
@@ -172,9 +173,19 @@ async function loadSessionMessages(sessionId) {
     </div>`;
   try {
     const res = await authFetch(`/history/sessions/${sessionId}/messages`);
-    if (!res.ok) { showWelcome(); return; }
+    console.log(`[TruvantaAI] Session messages response:`, res.status, res.ok);
+    if (!res.ok) { 
+      console.error(`[TruvantaAI] Failed to load session messages: ${res.status}`);
+      showWelcome(); 
+      return; 
+    }
     const msgs = await readJsonSafe(res) || [];
-    if (!msgs.length) { showWelcome(); return; }
+    console.log(`[TruvantaAI] Loaded ${msgs.length} messages`);
+    if (!msgs.length) { 
+      console.warn(`[TruvantaAI] Session has no messages, showing welcome`);
+      showWelcome(); 
+      return; 
+    }
     chatContainer.innerHTML = "";
     history = [];
     msgs.forEach(m => {
@@ -191,7 +202,11 @@ async function loadSessionMessages(sessionId) {
       }
     });
     scrollBottom();
-  } catch(_) { showWelcome(); }
+    console.log(`[TruvantaAI] Session loaded successfully with ${history.length} history items`);
+  } catch(e) { 
+    console.error(`[TruvantaAI] Error loading session:`, e);
+    showWelcome(); 
+  }
 }
 
 async function newChat() {
