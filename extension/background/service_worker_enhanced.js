@@ -1,7 +1,7 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Project: TruvantaAI � https://github.com/BharatChandra-sys/fake-news-extension
 /**
  * Enhanced Service Worker with Local Inference Support
  * Combines existing functionality with browser-side ONNX inference
@@ -10,7 +10,7 @@
 // Import local inference (will be added via importScripts)
 // importScripts('onnx_inference.js');
 
-const API = "https://factcheckai-gjrk.onrender.com";  // Production backend
+const API = "https://TruvantaAI-gjrk.onrender.com";  // Production backend
 const LOCAL_INFERENCE_ENABLED = true; // Toggle for local inference
 const INFERENCE_TIMEOUT = 500; // 500ms timeout for local inference
 

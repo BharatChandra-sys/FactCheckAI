@@ -1,12 +1,12 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI - https://github.com/BharatChandra-sys/fake-news-extension
+// Project: TruvantaAI - https://github.com/BharatChandra-sys/fake-news-extension
 (() => {
   console.log("[TruvantaAI] Content script v2.6.2 loaded");
   
   // Clean up any old tooltips from previous versions
-  const oldTooltip = document.getElementById("__factcheck_tooltip__");
+  const oldTooltip = document.getElementById("__Truvanta_tooltip__");
   if (oldTooltip) oldTooltip.remove();
   
   let tooltip = null;
@@ -19,7 +19,7 @@
   // ══════════════════════════════════════════════════════════
   function createFloatingToolbar() {
     const toolbar = document.createElement("div");
-    toolbar.id = "__factcheck_floating_toolbar__";
+    toolbar.id = "__Truvanta_floating_toolbar__";
     toolbar.innerHTML = `
       <button data-action="truthscan" title="Truth Scan" aria-label="Truth Scan" class="truthscan-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -79,7 +79,7 @@
     // Style buttons - COMPACT SIZE
     const style = document.createElement("style");
     style.textContent = `
-      #__factcheck_floating_toolbar__ button {
+      #__Truvanta_floating_toolbar__ button {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -93,24 +93,24 @@
         transition: all 0.12s ease;
         padding: 0;
       }
-      #__factcheck_floating_toolbar__ button:hover {
+      #__Truvanta_floating_toolbar__ button:hover {
         background: rgba(192, 193, 255, 0.15);
         transform: scale(1.08);
       }
-      #__factcheck_floating_toolbar__ button:active {
+      #__Truvanta_floating_toolbar__ button:active {
         transform: scale(0.92);
       }
-      #__factcheck_floating_toolbar__ .truthscan-btn {
+      #__Truvanta_floating_toolbar__ .truthscan-btn {
         background: linear-gradient(135deg, #c0c1ff 0%, #a8a9ff 100%);
         color: #101419;
         box-shadow: 0 2px 8px rgba(192, 193, 255, 0.3);
       }
-      #__factcheck_floating_toolbar__ .truthscan-btn:hover {
+      #__Truvanta_floating_toolbar__ .truthscan-btn:hover {
         background: linear-gradient(135deg, #a8a9ff 0%, #9091ff 100%);
         box-shadow: 0 3px 12px rgba(192, 193, 255, 0.5);
         transform: scale(1.08);
       }
-      #__factcheck_floating_toolbar__ .divider {
+      #__Truvanta_floating_toolbar__ .divider {
         width: 1px;
         height: 16px;
         background: rgba(255,255,255,0.1);
@@ -185,7 +185,7 @@
   // ══════════════════════════════════════════════════════════
   function createQuickActionPopup(text) {
     const popup = document.createElement("div");
-    popup.id = "__factcheck_quick_popup__";
+    popup.id = "__Truvanta_quick_popup__";
     popup.innerHTML = `
       <div class="popup-content">
         <div class="popup-header">
@@ -209,7 +209,7 @@
 
     const style = document.createElement("style");
     style.textContent = `
-      #__factcheck_quick_popup__ {
+      #__Truvanta_quick_popup__ {
         position: fixed;
         z-index: 2147483646;
         max-width: 380px;
@@ -223,10 +223,10 @@
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         pointer-events: all;
       }
-      #__factcheck_quick_popup__ .popup-content {
+      #__Truvanta_quick_popup__ .popup-content {
         padding: 16px;
       }
-      #__factcheck_quick_popup__ .popup-header {
+      #__Truvanta_quick_popup__ .popup-header {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -236,7 +236,7 @@
         font-size: 13px;
         font-weight: 500;
       }
-      #__factcheck_quick_popup__ .ai-icon {
+      #__Truvanta_quick_popup__ .ai-icon {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -246,7 +246,7 @@
         background: linear-gradient(135deg, #c0c1ff 0%, #a8a9ff 100%);
         color: #101419;
       }
-      #__factcheck_quick_popup__ .selected-preview {
+      #__Truvanta_quick_popup__ .selected-preview {
         padding: 12px;
         margin-bottom: 12px;
         background: rgba(192, 193, 255, 0.05);
@@ -258,7 +258,7 @@
         max-height: 80px;
         overflow: hidden;
       }
-      #__factcheck_quick_popup__ .action-btn {
+      #__Truvanta_quick_popup__ .action-btn {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -275,12 +275,12 @@
         cursor: pointer;
         transition: all 0.15s ease;
       }
-      #__factcheck_quick_popup__ .action-btn:hover {
+      #__Truvanta_quick_popup__ .action-btn:hover {
         background: linear-gradient(135deg, #a8a9ff 0%, #9091ff 100%);
         box-shadow: 0 4px 16px rgba(192, 193, 255, 0.4);
         transform: translateY(-1px);
       }
-      #__factcheck_quick_popup__ .action-btn:active {
+      #__Truvanta_quick_popup__ .action-btn:active {
         transform: scale(0.98);
       }
     `;
@@ -335,14 +335,14 @@
 
   function createInlineAIChat(context) {
     const chat = document.createElement("div");
-    chat.id = "__factcheck_inline_chat__";
+    chat.id = "__Truvanta_inline_chat__";
     chat.innerHTML = `
       <div class="chat-header">
         <div class="chat-branding">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2z"/>
           </svg>
-          <span class="chat-title">FactCheck<span class="ai-text">AI</span></span>
+          <span class="chat-title">Truvanta<span class="ai-text">AI</span></span>
         </div>
         <button class="chat-close" aria-label="Close chat">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -354,9 +354,9 @@
         <div class="context-label">Selected context:</div>
         <div class="context-text">${context.substring(0, 150)}${context.length > 150 ? '...' : ''}</div>
       </div>
-      <div class="chat-messages" id="__factcheck_chat_messages__"></div>
+      <div class="chat-messages" id="__Truvanta_chat_messages__"></div>
       <div class="chat-input-wrapper">
-        <input type="text" class="chat-input" placeholder="Ask about this content..." id="__factcheck_chat_input__" />
+        <input type="text" class="chat-input" placeholder="Ask about this content..." id="__Truvanta_chat_input__" />
         <button class="chat-send" aria-label="Send message">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
@@ -367,7 +367,7 @@
 
     const style = document.createElement("style");
     style.textContent = `
-      #__factcheck_inline_chat__ {
+      #__Truvanta_inline_chat__ {
         position: fixed;
         bottom: 20px;
         right: 20px;
@@ -386,32 +386,32 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         font-family: -apple-system, Inter, sans-serif;
       }
-      #__factcheck_inline_chat__.visible {
+      #__Truvanta_inline_chat__.visible {
         opacity: 1;
         transform: translateY(0) scale(1);
       }
-      #__factcheck_inline_chat__ .chat-header {
+      #__Truvanta_inline_chat__ .chat-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 16px;
         border-bottom: 1px solid rgba(192, 193, 255, 0.1);
       }
-      #__factcheck_inline_chat__ .chat-branding {
+      #__Truvanta_inline_chat__ .chat-branding {
         display: flex;
         align-items: center;
         gap: 10px;
         color: #c0c1ff;
       }
-      #__factcheck_inline_chat__ .chat-title {
+      #__Truvanta_inline_chat__ .chat-title {
         font-size: 16px;
         font-weight: 600;
         color: #e8eaed;
       }
-      #__factcheck_inline_chat__ .ai-text {
+      #__Truvanta_inline_chat__ .ai-text {
         color: #f59e0b;
       }
-      #__factcheck_inline_chat__ .chat-close {
+      #__Truvanta_inline_chat__ .chat-close {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -424,16 +424,16 @@
         cursor: pointer;
         transition: all 0.15s ease;
       }
-      #__factcheck_inline_chat__ .chat-close:hover {
+      #__Truvanta_inline_chat__ .chat-close:hover {
         background: rgba(192, 193, 255, 0.1);
         color: #e8eaed;
       }
-      #__factcheck_inline_chat__ .chat-context {
+      #__Truvanta_inline_chat__ .chat-context {
         padding: 12px 16px;
         background: rgba(192, 193, 255, 0.05);
         border-bottom: 1px solid rgba(192, 193, 255, 0.1);
       }
-      #__factcheck_inline_chat__ .context-label {
+      #__Truvanta_inline_chat__ .context-label {
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -441,12 +441,12 @@
         margin-bottom: 6px;
         font-weight: 600;
       }
-      #__factcheck_inline_chat__ .context-text {
+      #__Truvanta_inline_chat__ .context-text {
         font-size: 12px;
         line-height: 1.5;
         color: #9ca3af;
       }
-      #__factcheck_inline_chat__ .chat-messages {
+      #__Truvanta_inline_chat__ .chat-messages {
         flex: 1;
         overflow-y: auto;
         padding: 16px;
@@ -456,7 +456,7 @@
         min-height: 200px;
         max-height: 400px;
       }
-      #__factcheck_inline_chat__ .chat-message {
+      #__Truvanta_inline_chat__ .chat-message {
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -472,44 +472,44 @@
           transform: translateY(0);
         }
       }
-      #__factcheck_inline_chat__ .message-role {
+      #__Truvanta_inline_chat__ .message-role {
         font-size: 11px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
-      #__factcheck_inline_chat__ .message-role.user {
+      #__Truvanta_inline_chat__ .message-role.user {
         color: #c0c1ff;
       }
-      #__factcheck_inline_chat__ .message-role.assistant {
+      #__Truvanta_inline_chat__ .message-role.assistant {
         color: #f59e0b;
       }
-      #__factcheck_inline_chat__ .message-content {
+      #__Truvanta_inline_chat__ .message-content {
         padding: 12px;
         border-radius: 10px;
         font-size: 13px;
         line-height: 1.6;
         color: #e8eaed;
       }
-      #__factcheck_inline_chat__ .message-content.user {
+      #__Truvanta_inline_chat__ .message-content.user {
         background: rgba(192, 193, 255, 0.15);
         border: 1px solid rgba(192, 193, 255, 0.2);
       }
-      #__factcheck_inline_chat__ .message-content.assistant {
+      #__Truvanta_inline_chat__ .message-content.assistant {
         background: rgba(30, 34, 40, 0.8);
         border: 1px solid rgba(192, 193, 255, 0.1);
       }
-      #__factcheck_inline_chat__ .message-content.loading {
+      #__Truvanta_inline_chat__ .message-content.loading {
         color: #9ca3af;
         font-style: italic;
       }
-      #__factcheck_inline_chat__ .chat-input-wrapper {
+      #__Truvanta_inline_chat__ .chat-input-wrapper {
         display: flex;
         gap: 8px;
         padding: 12px 16px;
         border-top: 1px solid rgba(192, 193, 255, 0.1);
       }
-      #__factcheck_inline_chat__ .chat-input {
+      #__Truvanta_inline_chat__ .chat-input {
         flex: 1;
         padding: 10px 14px;
         background: rgba(30, 34, 40, 0.8);
@@ -521,14 +521,14 @@
         outline: none;
         transition: all 0.15s ease;
       }
-      #__factcheck_inline_chat__ .chat-input:focus {
+      #__Truvanta_inline_chat__ .chat-input:focus {
         border-color: #c0c1ff;
         box-shadow: 0 0 0 3px rgba(192, 193, 255, 0.1);
       }
-      #__factcheck_inline_chat__ .chat-input::placeholder {
+      #__Truvanta_inline_chat__ .chat-input::placeholder {
         color: #6b7280;
       }
-      #__factcheck_inline_chat__ .chat-send {
+      #__Truvanta_inline_chat__ .chat-send {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -541,15 +541,15 @@
         cursor: pointer;
         transition: all 0.15s ease;
       }
-      #__factcheck_inline_chat__ .chat-send:hover {
+      #__Truvanta_inline_chat__ .chat-send:hover {
         background: linear-gradient(135deg, #a8a9ff 0%, #9091ff 100%);
         box-shadow: 0 4px 16px rgba(192, 193, 255, 0.4);
         transform: translateY(-1px);
       }
-      #__factcheck_inline_chat__ .chat-send:active {
+      #__Truvanta_inline_chat__ .chat-send:active {
         transform: scale(0.95);
       }
-      #__factcheck_inline_chat__ .chat-send:disabled {
+      #__Truvanta_inline_chat__ .chat-send:disabled {
         opacity: 0.5;
         cursor: not-allowed;
       }
@@ -578,7 +578,7 @@
         // Get API endpoint - use production URL directly
         const API_URL = localStorage.getItem("FORCE_LOCAL_DEV") === "true"
           ? "http://localhost:8000"
-          : "https://factcheckai-gjrk.onrender.com";
+          : "https://TruvantaAI-gjrk.onrender.com";
         
         // Get auth token
         const { token } = await chrome.storage.local.get("token");
@@ -681,7 +681,7 @@
   }
 
   function addChatMessage(role, content, isLoading = false) {
-    const messagesContainer = document.getElementById("__factcheck_chat_messages__");
+    const messagesContainer = document.getElementById("__Truvanta_chat_messages__");
     if (!messagesContainer) return;
     
     const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -749,7 +749,7 @@
   // ══════════════════════════════════════════════════════════
   function createTooltip() {
     const el = document.createElement("div");
-    el.id = "__factcheck_tooltip__";
+    el.id = "__Truvanta_tooltip__";
     el.innerHTML = `
       <span style="font-size:13px;line-height:1;">🔍</span>
       <span style="font-size:12px;font-weight:600;letter-spacing:0.01em;">TruthScan this</span>

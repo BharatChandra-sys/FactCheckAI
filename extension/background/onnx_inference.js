@@ -1,7 +1,7 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI — https://github.com/BharatChandra-sys/fake-news-extension
+// Project: TruvantaAI — https://github.com/BharatChandra-sys/fake-news-extension
 /**
  * ONNX Runtime Web - Browser-Side Inference
  * 
@@ -234,7 +234,7 @@ class LocalInference {
      */
     async getFromCache(key) {
         return new Promise((resolve) => {
-            const request = indexedDB.open('FactCheckerAI', 1);
+            const request = indexedDB.open('TruvantaerAI', 1);
             
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
@@ -270,7 +270,7 @@ class LocalInference {
      */
     async saveToCache(key, data) {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('FactCheckerAI', 1);
+            const request = indexedDB.open('TruvantaerAI', 1);
             
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
@@ -298,7 +298,7 @@ class LocalInference {
      */
     async clearCache() {
         return new Promise((resolve) => {
-            const request = indexedDB.deleteDatabase('FactCheckerAI');
+            const request = indexedDB.deleteDatabase('TruvantaerAI');
             request.onsuccess = () => {
                 console.log('[LocalInference] Cache cleared');
                 resolve();

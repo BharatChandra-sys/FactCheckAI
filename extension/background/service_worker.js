@@ -1,9 +1,9 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Project: TruvantaAI � https://github.com/BharatChandra-sys/fake-news-extension
 /**
- * FactCheckAI — Background Service Worker (Manifest V3)
+ * TruvantaAI — Background Service Worker (Manifest V3)
  *
  * Responsibilities:
  *  - Keep backend alive (alarm-based ping every 4 min)
@@ -17,7 +17,7 @@
 
 // ── Backend URL (reads from storage if overridden in settings) ────────────────
 // Default points to production Render deployment
-let API_BASE = "https://factcheckai-gjrk.onrender.com";
+let API_BASE = "https://TruvantaAI-gjrk.onrender.com";
 
 chrome.storage.local.get("apiBase", ({ apiBase }) => {
   if (apiBase) API_BASE = apiBase;
@@ -46,7 +46,7 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 
   if (reason === "install") {
     // Show a one-time welcome notification
-    chrome.notifications.create("factcheck-welcome", {
+    chrome.notifications.create("Truvanta-welcome", {
       type:    "basic",
       iconUrl: chrome.runtime.getURL("icons/icon128.png"),
       title:   "TruvantaAI installed",
@@ -63,7 +63,7 @@ chrome.alarms.onAlarm.addListener(({ name }) => {
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 /**
- * Open the FactCheckAI popup window anchored to the top-right of the current window.
+ * Open the TruvantaAI popup window anchored to the top-right of the current window.
  */
 function openAnalysisPopup() {
   chrome.windows.getCurrent((win) => {
@@ -155,7 +155,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
 // ── Keyboard shortcuts ────────────────────────────────────────────────────────
 chrome.commands.onCommand.addListener(async (command) => {
   // Ctrl+Shift+Y — just open the popup
-  if (command === "open-factchecker") {
+  if (command === "open-Truvantaer") {
     openPopupWithText("");
     return;
   }

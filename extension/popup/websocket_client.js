@@ -1,7 +1,7 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Project: TruvantaAI � https://github.com/BharatChandra-sys/fake-news-extension
 /**
  * WebSocket Client Manager
  * 
@@ -43,7 +43,7 @@ class WebSocketManager {
     
     try {
       // Get WebSocket URL from config
-      const API_BASE_URL = typeof API !== 'undefined' ? API : 'https://factcheckai-gjrk.onrender.com';
+      const API_BASE_URL = typeof API !== 'undefined' ? API : 'https://TruvantaAI-gjrk.onrender.com';
       const wsUrl = API_BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://');
       
       // Build connection URL with auth

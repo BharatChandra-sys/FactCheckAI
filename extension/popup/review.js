@@ -1,14 +1,14 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
-// Review Queue — FactCheckAI
+// Project: TruvantaAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Review Queue — TruvantaAI
 // Self-contained: does not rely on any globals from config.js
 
 const _REVIEW_API = (function () {
   // Try to use the API constant from config.js if available, else fallback to production
   if (typeof API !== "undefined") return API;
-  return "https://factcheckai-gjrk.onrender.com";
+  return "https://TruvantaAI-gjrk.onrender.com";
 })();
 
 async function _reviewFetch(path, opts = {}) {
@@ -28,7 +28,7 @@ async function _reviewJson(res) {
 
 function _reviewHeaders(extra = {}) {
   return {
-    "X-Client": "factcheck-extension",
+    "X-Client": "Truvanta-extension",
     ...extra,
   };
 }

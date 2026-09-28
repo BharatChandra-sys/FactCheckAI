@@ -1,7 +1,7 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Project: TruvantaAI � https://github.com/BharatChandra-sys/fake-news-extension
 // ── Backend API URL ───────────────────────────────────────────
 // Auto-selects production vs dev based on Chrome extension context.
 // Default: Production (Render) - override with FORCE_LOCAL_DEV=true for local testing
@@ -9,7 +9,7 @@ const _FORCE_LOCAL = localStorage.getItem("FORCE_LOCAL_DEV") === "true";
 const _IS_PROD = !_FORCE_LOCAL;
 
 const API = _IS_PROD
-  ? "https://factcheckai-gjrk.onrender.com"   // Production (Render)
+  ? "https://TruvantaAI-gjrk.onrender.com"   // Production (Render)
   : "http://localhost:8000";                   // Local dev (set FORCE_LOCAL_DEV=true in console)
 
 const API_TIMEOUT_MS = 45000;  // 45s for AI reasoning tasks

@@ -1,7 +1,7 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Project: TruvantaAI � https://github.com/BharatChandra-sys/fake-news-extension
 // API is defined in config.js (loaded before this script)
 
 let token = null;
@@ -234,7 +234,7 @@ function showWelcome() {
   wrap.className = "welcome-screen";
   wrap.innerHTML = `
     <img src="../icons/logo.png" alt="" class="welcome-logo-img" style="width:56px;height:56px;object-fit:contain;margin-bottom:4px;">
-    <div class="welcome-brand"><span class="brand-main">FactCheck</span><span class="brand-ai">AI</span></div>
+    <div class="welcome-brand"><span class="brand-main">Truvanta</span><span class="brand-ai">AI</span></div>
     <div class="welcome-sub">Ask me anything or paste a news claim.<br>I'll chat or fact-check automatically.</div>
     <div class="welcome-chips">
       <button class="welcome-chip" id="wc1">📰 Paste a headline to fact-check</button>
@@ -300,7 +300,7 @@ const HIGH_CRED_DOMAINS = new Set([
   "theguardian.com","nytimes.com","washingtonpost.com","wsj.com",
   "bloomberg.com","ft.com","economist.com","nature.com","science.org",
   "who.int","cdc.gov","nih.gov","gov.uk","europa.eu","un.org",
-  "snopes.com","factcheck.org","politifact.com","fullfact.org",
+  "snopes.com","Truvanta.org","politifact.com","fullfact.org",
   "aljazeera.com","dw.com","france24.com","abc.net.au","cbc.ca"
 ]);
 
@@ -1239,7 +1239,7 @@ async function send() {
   }
 }
 
-// Helper — set the header title, preserving FactCheckAI brand styling
+// Helper — set the header title, preserving TruvantaAI brand styling
 function setChatTitle(title) {
   const el = document.getElementById("chat-title");
   if (!el) return;

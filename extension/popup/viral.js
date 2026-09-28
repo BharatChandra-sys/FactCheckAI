@@ -1,13 +1,13 @@
 // Copyright 2027 Bodapati Bharat Chandra. All rights reserved.
 // Licensed under the Apache License, Version 2.0
 // SPDX-License-Identifier: Apache-2.0
-// Project: FactCheckAI � https://github.com/BharatChandra-sys/fake-news-extension
+// Project: TruvantaAI � https://github.com/BharatChandra-sys/fake-news-extension
 // Viral Spread Monitor
 // config.js is loaded before this file and provides: API, apiFetch, buildHeaders, readJsonSafe
 
 // Safety fallback in case config.js didn't load
 if (typeof apiFetch === "undefined") {
-  const _API = (typeof API !== "undefined") ? API : "https://factcheckai-gjrk.onrender.com";
+  const _API = (typeof API !== "undefined") ? API : "https://TruvantaAI-gjrk.onrender.com";
   window.apiFetch = async (path, opts = {}) => fetch(_API + path, opts);
   window.buildHeaders = (extra = {}) => extra;
   window.readJsonSafe = async (res) => { try { return await res.json(); } catch { return null; } };
